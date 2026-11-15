@@ -2,12 +2,12 @@ import { Button } from "@ui-sdk/react/button"
 import { notFound } from "next/navigation"
 import { Suspense } from "react"
 import { getContent, type Product } from "@/lib/api"
-import { addItem } from "../actions"
-import { Price } from "../price"
+import { addItem } from "../../actions"
+import { Price } from "../../price"
 
-async function ProductDetail({ searchParams }: Pick<PageProps<"/product">, "searchParams">) {
-  const { id } = await searchParams
-  const res = await getContent<Product>(`/product?id=${encodeURIComponent(String(id ?? ""))}`)
+async function ProductDetail({ params }: Pick<PageProps<"/product/[id]">, "params">) {
+  const { id } = await params
+  const res = await getContent<Product>(`/product?id=${encodeURIComponent(id)}`)
   if (res.status === 404) notFound()
   const product = res.data
 
@@ -36,11 +36,11 @@ async function ProductDetail({ searchParams }: Pick<PageProps<"/product">, "sear
   )
 }
 
-// searchParams is request data, so the page body streams; the product content itself comes from the cache.
-export default function ProductPage({ searchParams }: PageProps<"/product">) {
+// No generateStaticParams: nothing is built per product. The shell is static, the product renders per request from cached content.
+export default function ProductPage({ params }: PageProps<"/product/[id]">) {
   return (
     <Suspense fallback={<p>Carregando…</p>}>
-      <ProductDetail searchParams={searchParams} />
+      <ProductDetail params={params} />
     </Suspense>
   )
 }

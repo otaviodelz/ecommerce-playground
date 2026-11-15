@@ -29,7 +29,9 @@ Usuário de teste: veja `apps/server/src/data.ts`.
 
 Next.js 16 em `http://localhost:3000` (`API_URL`, padrão `http://localhost:3333`), UI com [ui-sdk](https://ui-sdk.dev).
 
-- Conteúdo do CMS e da PDP fica em cache (`"use cache"`, tag = path da API) e a home sai no HTML estático.
+- Conteúdo do CMS e da PDP fica em cache (`"use cache"`, tag = path da API); a home sai no HTML estático.
+  `/product/[id]` não é gerada no build: a casca é estática e o produto renderiza por requisição a partir do cache.
+  Links antigos `/product?id=x` redirecionam (308) para `/product/x`.
   Só o preço é por visitante: `<Price>` em um `<Suspense>` pequeno, um lote de `/prices` por página, cache de minutos por warehouse.
 - Revalidação: `POST /api/revalidate` com header `x-revalidate-secret: $REVALIDATE_SECRET` e `{ "tag": "/page?cid=home" }` (ou `/product?id=…`, `prices`).
 - Sessão em cookies httpOnly; `proxy.ts` cria a sessão guest e renova o access token. Cesta e login são dinâmicos.

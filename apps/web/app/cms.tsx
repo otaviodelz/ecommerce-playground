@@ -5,7 +5,7 @@ import { Price } from "./price"
 
 function ProductTile({ product, ids }: { product: ProductCard; ids: string }) {
   return (
-    <Link href={`/product?id=${product.id}`} className="tile">
+    <Link href={`/product/${product.id}`} className="tile">
       <img src={product.image} alt="" width={300} height={300} />
       <h3>{product.name}</h3>
       <p className="muted">{product.brand}</p>

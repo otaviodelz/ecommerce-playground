@@ -75,7 +75,7 @@ export type Block =
 
 export const pages: Record<string, Block[]> = {
   home: [
-    { type: 'banner', id: 'hero', image: '/images/hero.svg?w=1200&h=400', link: '/product?id=tenis-runner' },
+    { type: 'banner', id: 'hero', image: '/images/hero.svg?w=1200&h=400', link: '/product/tenis-runner' },
     { type: 'shelf', id: 'best-sellers', title: 'Mais vendidos', productIds: ['tenis-runner', 'camiseta-basic', 'mochila-urban'] },
     { type: 'banner', id: 'promo', image: '/images/promo.svg?w=1200&h=300', link: '/page?cid=home' },
     { type: 'shelf', id: 'new', title: 'Novidades', productIds: ['garrafa-termica', 'mochila-urban'] },

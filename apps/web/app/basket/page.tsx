@@ -17,7 +17,7 @@ async function BasketItems() {
           <li key={item.id}>
             <img src={item.image} alt="" width={64} height={64} />
             <div>
-              <Link href={`/product?id=${item.id}`}>{item.name}</Link>
+              <Link href={`/product/${item.id}`}>{item.name}</Link>
               <p className="muted">
                 {item.quantity} × {brl(item.price)} = {brl(item.total)}
               </p>
