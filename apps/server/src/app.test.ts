@@ -26,6 +26,24 @@ test('login validates credentials', async () => {
   assert.equal((await post('/login', {})).status, 400)
 })
 
+test('refresh-token issues new tokens only for a valid refresh token', async () => {
+  const login = await (await post('/login', { email: 'maria@example.com', password: '123456' })).json()
+  const res = await post('/refresh-token', { refreshToken: login.refreshToken })
+  const json = await res.json()
+  assert.equal(res.status, 200)
+  assert.equal(json.customerId, 'cus_1')
+  assert.equal(decode(json.accessToken).payload.type, 'access')
+  assert.equal(decode(json.refreshToken).payload.guest, false)
+
+  const guest = await (await post('/guest-login', {})).json()
+  const guestRefreshed = await (await post('/refresh-token', { refreshToken: guest.refreshToken })).json()
+  assert.equal(decode(guestRefreshed.accessToken).payload.guest, true)
+
+  assert.equal((await post('/refresh-token', { refreshToken: login.accessToken })).status, 401)
+  assert.equal((await post('/refresh-token', { refreshToken: 'garbage' })).status, 401)
+  assert.equal((await post('/refresh-token', {})).status, 400)
+})
+
 test('set-location maps cep to warehouse', async () => {
   const wh = async (cep: unknown) => (await (await post('/set-location', { cep })).json()).warehouse
   assert.equal(await wh('01310-100'), 'sp-01')

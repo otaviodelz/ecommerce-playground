@@ -10,6 +10,7 @@ Hono em `http://localhost:3333` (`PORT`, `JWT_SECRET` via env). Preços em centa
 |---|---|---|---|
 | POST | `/guest-login` | — | `accessToken`, `refreshToken`, `customerId` |
 | POST | `/login` | `{ email, password }` | tokens, `customerId`, `name`, `email` |
+| POST | `/refresh-token` | `{ refreshToken }` | novos `accessToken`, `refreshToken`, `customerId` |
 | POST | `/set-location` | `{ cep }` | `{ warehouse }` |
 | GET | `/page?cid=home` | header `warehouse` | blocos CMS (`banner`, `shelf`) |
 | GET | `/product?id=tenis-runner` | header `warehouse` | dados da PDP com preço do warehouse |

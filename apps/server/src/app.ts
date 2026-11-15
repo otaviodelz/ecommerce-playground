@@ -1,6 +1,6 @@
 import { Hono, type Context } from 'hono'
 import { randomUUID } from 'node:crypto'
-import { checkPassword, issueTokens } from './auth.js'
+import { checkPassword, issueTokens, verifyRefreshToken } from './auth.js'
 import { DEFAULT_WAREHOUSE, pages, products, users, warehouseForCep, warehouses, type Product } from './data.js'
 
 export const app = new Hono()
@@ -33,6 +33,14 @@ app.post('/login', async (c) => {
     return c.json({ error: 'invalid credentials' }, 401)
   }
   return c.json({ ...(await issueTokens(user.id, false)), customerId: user.id, name: user.name, email: user.email })
+})
+
+app.post('/refresh-token', async (c) => {
+  const { refreshToken } = await body(c)
+  if (typeof refreshToken !== 'string') return c.json({ error: 'refreshToken is required' }, 400)
+  const session = await verifyRefreshToken(refreshToken)
+  if (!session) return c.json({ error: 'invalid refresh token' }, 401)
+  return c.json({ ...(await issueTokens(session.customerId, session.guest)), customerId: session.customerId })
 })
 
 app.post('/set-location', async (c) => {
