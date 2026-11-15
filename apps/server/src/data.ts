@@ -42,25 +42,25 @@ export const products: Record<string, Product> = {
   'tenis-runner': {
     id: 'tenis-runner', name: 'Tênis Runner', brand: 'Acme',
     description: 'Tênis leve para corrida.',
-    images: ['https://picsum.photos/seed/tenis/600'],
+    images: ['/images/tenis.svg'],
     basePrice: 29990, listPrice: 39990, specs: { Material: 'Mesh', Peso: '240g' },
   },
   'camiseta-basic': {
     id: 'camiseta-basic', name: 'Camiseta Basic', brand: 'Acme',
     description: 'Camiseta 100% algodão.',
-    images: ['https://picsum.photos/seed/camiseta/600'],
+    images: ['/images/camiseta.svg'],
     basePrice: 5990, listPrice: 7990, specs: { Material: 'Algodão' },
   },
   'mochila-urban': {
     id: 'mochila-urban', name: 'Mochila Urban', brand: 'Trail',
     description: 'Mochila 20L com compartimento para notebook.',
-    images: ['https://picsum.photos/seed/mochila/600'],
+    images: ['/images/mochila.svg'],
     basePrice: 18990, listPrice: 18990, specs: { Capacidade: '20L' },
   },
   'garrafa-termica': {
     id: 'garrafa-termica', name: 'Garrafa Térmica', brand: 'Trail',
     description: 'Mantém a temperatura por 12h.',
-    images: ['https://picsum.photos/seed/garrafa/600'],
+    images: ['/images/garrafa.svg'],
     basePrice: 8990, listPrice: 9990, specs: { Volume: '750ml' },
   },
 }
@@ -75,9 +75,9 @@ export type Block =
 
 export const pages: Record<string, Block[]> = {
   home: [
-    { type: 'banner', id: 'hero', image: 'https://picsum.photos/seed/hero/1200/400', link: '/product?id=tenis-runner' },
+    { type: 'banner', id: 'hero', image: '/images/hero.svg?w=1200&h=400', link: '/product?id=tenis-runner' },
     { type: 'shelf', id: 'best-sellers', title: 'Mais vendidos', productIds: ['tenis-runner', 'camiseta-basic', 'mochila-urban'] },
-    { type: 'banner', id: 'promo', image: 'https://picsum.photos/seed/promo/1200/300', link: '/page?cid=home' },
+    { type: 'banner', id: 'promo', image: '/images/promo.svg?w=1200&h=300', link: '/page?cid=home' },
     { type: 'shelf', id: 'new', title: 'Novidades', productIds: ['garrafa-termica', 'mochila-urban'] },
   ],
 }

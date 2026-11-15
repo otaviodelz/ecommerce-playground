@@ -6,6 +6,18 @@ import { app } from './app.js'
 const post = (path: string, body: unknown) =>
   app.request(path, { method: 'POST', body: JSON.stringify(body), headers: { 'content-type': 'application/json' } })
 
+test('images serves sized svg placeholders for safe slugs only', async () => {
+  const res = await app.request('/images/hero.svg?w=1200&h=400')
+  const svg = await res.text()
+  assert.equal(res.status, 200)
+  assert.equal(res.headers.get('content-type'), 'image/svg+xml')
+  assert.match(svg, /width="1200" height="400"/)
+  assert.match(svg, />hero<\/text>/)
+  assert.match(await (await app.request('/images/tenis.svg?w=99999')).text(), /width="2000" height="600"/)
+  assert.equal((await app.request('/images/%3Cscript%3E.svg')).status, 404)
+  assert.equal((await app.request('/images/tenis.png')).status, 404)
+})
+
 test('guest-login returns tokens and customerId', async () => {
   const res = await post('/guest-login', {})
   const json = await res.json()

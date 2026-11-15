@@ -36,6 +36,20 @@ function basketView(customerId: string, warehouse: string) {
   return { customerId, warehouse, items, subtotal: items.reduce((sum, i) => sum + i.total, 0) }
 }
 
+// Placeholder images for the mock catalog: /images/<slug>.svg?w=&h= draws the slug on a color derived from it.
+app.get('/images/:file', (c) => {
+  const slug = /^([a-z0-9-]+)\.svg$/.exec(c.req.param('file'))?.[1]
+  if (!slug) return c.json({ error: 'image not found' }, 404)
+  const size = (v: string | undefined) => Math.min(Math.max(Math.trunc(Number(v)) || 600, 16), 2000)
+  const [w, h] = [size(c.req.query('w')), size(c.req.query('h'))]
+  const hue = [...slug].reduce((sum, ch) => sum + ch.charCodeAt(0) * 7, 0) % 360
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`
+    + `<rect width="100%" height="100%" fill="hsl(${hue} 45% 82%)"/>`
+    + `<text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" `
+    + `font-size="${Math.round(Math.min(w, h) / 8)}" fill="hsl(${hue} 50% 22%)">${slug}</text></svg>`
+  return c.body(svg, 200, { 'content-type': 'image/svg+xml', 'cache-control': 'public, max-age=86400' })
+})
+
 app.post('/guest-login', async (c) => {
   const customerId = randomUUID()
   return c.json({ ...(await issueTokens(customerId, true)), customerId })
