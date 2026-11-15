@@ -27,7 +27,6 @@ function BannerCarousel({ slides }: { slides: BannerSlide[] }) {
   if (slides.length === 1) return <BannerImage slide={slides[0]} />
   return (
     <Carousel aria-label="Destaques" className="banner-carousel" loop defaultPlaying interval={6000}>
-      <CarouselPrevious aria-label="Destaque anterior" />
       <CarouselViewport>
         <CarouselContent>
           {slides.map((slide) => (
@@ -37,7 +36,6 @@ function BannerCarousel({ slides }: { slides: BannerSlide[] }) {
           ))}
         </CarouselContent>
       </CarouselViewport>
-      <CarouselNext aria-label="Próximo destaque" />
       <div className="carousel-controls">
         <CarouselPlayToggle>{(state) => (state.playing ? "Pausar destaques" : "Reproduzir destaques")}</CarouselPlayToggle>
         <CarouselIndicatorGroup aria-label="Escolher destaque">
@@ -45,6 +43,8 @@ function BannerCarousel({ slides }: { slides: BannerSlide[] }) {
             <CarouselIndicator key={slide.image} page={index + 1} aria-label={`Ir para: ${slide.alt}`} />
           ))}
         </CarouselIndicatorGroup>
+        <CarouselPrevious aria-label="Destaque anterior" />
+        <CarouselNext aria-label="Próximo destaque" />
       </div>
     </Carousel>
   )

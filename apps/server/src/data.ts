@@ -105,12 +105,15 @@ export const products: Record<string, Product> = {
 export const baskets = new Map<string, Map<string, number>>()
 export const MAX_ITEM_QUANTITY = 99
 
+type Slide = { image: string; link: string; alt: string }
+
 // A banner with more than one slide is shown as a carousel; shelves always are.
 export type Block =
-  | { type: 'banner'; id: string; slides: { image: string; link: string; alt: string }[] }
+  | { type: 'hero'; id: string; title: string; text: string; actions: { label: string; link: string }[]; slides: Slide[] }
+  | { type: 'banner'; id: string; slides: Slide[] }
   | { type: 'shelf'; id: string; title: string; productIds: string[] }
   | { type: 'info-bar'; id: string; text: string; link?: string }
-  | { type: 'categories'; id: string; title: string; items: { label: string; image: string; link: string }[] }
+  | { type: 'categories'; id: string; title: string; items: { label: string; description: string; link: string }[] }
   | { type: 'benefits'; id: string; items: { title: string; description: string }[] }
 
 const slide = (slug: string, link: string, alt: string, h = 400) => ({ image: `/images/${slug}.svg?w=1200&h=${h}`, link, alt })
@@ -120,17 +123,22 @@ export const pages: Record<string, Block[]> = {
   home: [
     { type: 'info-bar', id: 'shipping', text: 'Frete grátis nas compras acima de R$ 199', link: '/page?cid=corrida' },
     {
-      type: 'banner', id: 'hero', slides: [
-        slide('hero-corrida', '/product/tenis-runner', 'Tênis Runner com até 25% off'),
-        slide('hero-relogio', '/product/relogio-gps', 'Relógio GPS: treine com dados'),
-        slide('hero-inverno', '/product/jaqueta-corta-vento', 'Coleção corta-vento'),
+      type: 'hero', id: 'hero',
+      title: 'Equipamento para quem treina de verdade',
+      text: 'Tênis, relógios e acessórios com o preço do seu estoque mais próximo. Troca em 30 dias.',
+      actions: [{ label: 'Ver ofertas', link: '/page?cid=ofertas' }, { label: 'Corrida', link: '/page?cid=corrida' }],
+      slides: [
+        slide('hero-corrida', '/product/tenis-runner', 'Tênis Runner com até 25% off', 900),
+        slide('hero-relogio', '/product/relogio-gps', 'Relógio GPS: treine com dados', 900),
+        slide('hero-inverno', '/product/jaqueta-corta-vento', 'Coleção corta-vento', 900),
       ],
     },
     {
-      type: 'categories', id: 'departments', title: 'Compre por categoria', items: [
-        { label: 'Corrida', image: '/images/corrida.svg?w=300&h=300', link: '/page?cid=corrida' },
-        { label: 'Acessórios', image: '/images/acessorios.svg?w=300&h=300', link: '/page?cid=acessorios' },
-        { label: 'Eletrônicos', image: '/images/eletronicos.svg?w=300&h=300', link: '/page?cid=eletronicos' },
+      type: 'categories', id: 'departments', title: 'Categorias', items: [
+        { label: 'Corrida', description: 'Tênis, bermudas e meias', link: '/page?cid=corrida' },
+        { label: 'Acessórios', description: 'Mochilas, bonés e garrafas', link: '/page?cid=acessorios' },
+        { label: 'Eletrônicos', description: 'Relógios e fones', link: '/page?cid=eletronicos' },
+        { label: 'Ofertas', description: 'Até 25% off', link: '/page?cid=ofertas' },
       ],
     },
     shelf('best-sellers', 'Mais vendidos', ['tenis-runner', 'camiseta-basic', 'mochila-urban', 'relogio-gps', 'bermuda-dry', 'fone-sport']),
@@ -147,4 +155,6 @@ export const pages: Record<string, Block[]> = {
   corrida: [shelf('running', 'Corrida', ['tenis-runner', 'bermuda-dry', 'meia-pro', 'camiseta-basic', 'jaqueta-corta-vento'])],
   acessorios: [shelf('accessories', 'Acessórios', ['mochila-urban', 'garrafa-termica', 'bone-trail', 'meia-pro'])],
   eletronicos: [shelf('electronics', 'Eletrônicos', ['relogio-gps', 'fone-sport'])],
+  novidades: [shelf('new-arrivals', 'Novidades', ['jaqueta-corta-vento', 'garrafa-termica', 'bone-trail', 'meia-pro', 'mochila-urban'])],
+  ofertas: [shelf('deals', 'Ofertas', Object.values(products).filter((p) => p.listPrice > p.basePrice).map((p) => p.id))],
 }

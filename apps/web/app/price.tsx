@@ -1,10 +1,26 @@
 import { Suspense } from "react"
-import { brl, getPrice, type PriceInfo } from "@/lib/api"
+import { brl, discountPercent, getPrice, installments, type PriceInfo } from "@/lib/api"
 
 function Prices({ price, listPrice }: PriceInfo) {
+  const discount = discountPercent(price, listPrice)
+  const split = installments(price)
   return (
     <p className="prices">
-      {listPrice > price && <s className="list-price">{brl(listPrice)}</s>} <span className="price">{brl(price)}</span>
+      <span className="price">{brl(price)}</span>
+      {discount > 0 && (
+        <>
+          <s className="list-price">
+            <span className="sr-only">de </span>
+            {brl(listPrice)}
+          </s>
+          <span className="discount">-{discount}%</span>
+        </>
+      )}
+      {split && (
+        <span className="installments">
+          {split.count}x de {brl(split.value)} sem juros
+        </span>
+      )}
     </p>
   )
 }

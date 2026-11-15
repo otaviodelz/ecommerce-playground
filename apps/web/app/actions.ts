@@ -34,6 +34,8 @@ export async function setLocation(form: FormData) {
 export async function addItem(form: FormData) {
   const res = await api("/add-item", { productId: form.get("productId") })
   if (!res.ok) throw new Error(res.data.error ?? "Não foi possível adicionar o item.")
+  // The header's basket count lives in the shared layout, which a redirect alone doesn't re-render.
+  refresh()
   redirect("/basket")
 }
 

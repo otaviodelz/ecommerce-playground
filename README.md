@@ -12,7 +12,8 @@ Hono em `http://localhost:3333` (`PORT`, `JWT_SECRET` via env). Preços em centa
 | POST | `/login` | `{ email, password }` | tokens, `customerId`, `name`, `email` |
 | POST | `/refresh-token` | `{ refreshToken }` | novos `accessToken`, `refreshToken`, `customerId` |
 | POST | `/set-location` | `{ cep }` | `{ warehouse }` |
-| GET | `/page?cid=home` | — | blocos CMS (`info-bar`, `banner`, `categories`, `shelf`, `benefits`), sem preço |
+| GET | `/page?cid=home` | — | blocos CMS (`info-bar`, `hero`, `banner`, `categories`, `shelf`, `benefits`), sem preço |
+| GET | `/search?q=tenis` | — | produtos que batem com nome, marca ou descrição (sem acento/caixa), sem preço |
 | GET | `/product?id=tenis-runner` | — | dados da PDP, sem preço |
 | GET | `/prices?ids=a,b` | header `warehouse` | `{ warehouse, prices: { [id]: { price, listPrice } } }` |
 | GET | `/basket` | headers `authorization`, `warehouse` | itens com preço, `subtotal` |
@@ -21,7 +22,7 @@ Hono em `http://localhost:3333` (`PORT`, `JWT_SECRET` via env). Preços em centa
 | GET | `/images/<slug>.svg?w=&h=` | — | placeholder SVG |
 
 Conteúdo (`/page`, `/product`) é igual para todos; preço vem de `/prices` pelo warehouse.
-Páginas CMS: `home`, `corrida`, `acessorios`, `eletronicos`. Banner com mais de um slide e vitrines viram carrossel no web.
+Páginas CMS: `home`, `corrida`, `acessorios`, `eletronicos`, `novidades`, `ofertas`. Banner com mais de um slide e vitrines viram carrossel no web.
 Sem header `warehouse` usa `br-01`; warehouse desconhecido → 400.
 Rotas de cesta exigem `authorization: Bearer <accessToken>` (guest ou logado); máx. 99 unidades por item.
 Usuário de teste: veja `apps/server/src/data.ts`.
@@ -29,6 +30,10 @@ Usuário de teste: veja `apps/server/src/data.ts`.
 ## apps/web
 
 Next.js 16 em `http://localhost:3000` (`API_URL`, padrão `http://localhost:3333`), UI com [ui-sdk](https://ui-sdk.dev).
+
+- Páginas: `/` (CMS home), `/page?cid=`, `/product/[id]`, `/search?q=`, `/basket`, `/login`.
+- Tema "terminal" (escuro fixo, cantos retos, títulos mono) pelos tokens `--ui-*` em `app/globals.css`.
+  Header: busca (atalho `/`), CEP num popover, conta e cesta com contador; barra de categorias abaixo.
 
 - Conteúdo do CMS e da PDP fica em cache (`"use cache"`, tag = path da API); a home sai no HTML estático.
   `/product/[id]` não é gerada no build: a casca é estática e o produto renderiza por requisição a partir do cache.

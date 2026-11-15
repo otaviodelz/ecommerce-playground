@@ -8,13 +8,17 @@ import { useState, useTransition, type FormEvent } from "react"
 import type { FormAction } from "./actions"
 
 // onSubmit instead of <form action>: React resets the form after an action, wiping the typed values and the error.
-function useFormAction(action: FormAction) {
+function useFormAction(action: FormAction, onSuccess?: () => void) {
   const [error, setError] = useState("")
   const [pending, startTransition] = useTransition()
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const form = new FormData(event.currentTarget)
-    startTransition(async () => setError((await action(form)).error ?? ""))
+    startTransition(async () => {
+      const result = await action(form)
+      setError(result.error ?? "")
+      if (!result.error) onSuccess?.()
+    })
   }
   return { error, clear: () => setError(""), onSubmit, pending }
 }
@@ -36,24 +40,24 @@ function LoginForm({ action }: { action: FormAction }) {
         <FieldError />
         {error && <FieldError match>{error}</FieldError>}
       </Field>
-      <Button type="submit" disabled={pending} focusableWhenDisabled>
+      <Button type="submit" data-variant="solid" disabled={pending} focusableWhenDisabled>
         Entrar
       </Button>
     </form>
   )
 }
 
-function CepForm({ action, defaultCep }: { action: FormAction; defaultCep?: string }) {
-  const { error, clear, onSubmit, pending } = useFormAction(action)
+function CepForm({ action, defaultCep, onSuccess }: { action: FormAction; defaultCep?: string; onSuccess?: () => void }) {
+  const { error, clear, onSubmit, pending } = useFormAction(action, onSuccess)
   return (
-    <form onSubmit={onSubmit} className="cep-form">
+    <form onSubmit={onSubmit} className="stack">
       <Field name="cep" invalid={error ? true : undefined}>
         <FieldLabel>CEP</FieldLabel>
         <Input defaultValue={defaultCep} required pattern="\d{5}-?\d{3}" placeholder="00000-000" inputMode="numeric" onValueChange={clear} />
         <FieldError />
         {error && <FieldError match>{error}</FieldError>}
       </Field>
-      <Button type="submit" disabled={pending} focusableWhenDisabled>
+      <Button type="submit" data-variant="solid" disabled={pending} focusableWhenDisabled>
         Salvar CEP
       </Button>
     </form>

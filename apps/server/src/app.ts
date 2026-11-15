@@ -43,9 +43,9 @@ app.get('/images/:file', (c) => {
   const [w, h] = [size(c.req.query('w')), size(c.req.query('h'))]
   const hue = [...slug].reduce((sum, ch) => sum + ch.charCodeAt(0) * 7, 0) % 360
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`
-    + `<rect width="100%" height="100%" fill="hsl(${hue} 45% 82%)"/>`
-    + `<text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" `
-    + `font-size="${Math.round(Math.min(w, h) / 8)}" fill="hsl(${hue} 50% 22%)">${slug}</text></svg>`
+    + `<rect width="100%" height="100%" fill="hsl(${hue} 12% 13%)"/>`
+    + `<text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" `
+    + `letter-spacing="2" font-size="${Math.round(Math.min(w, h) / 10)}" fill="hsl(${hue} 30% 66%)">${slug}</text></svg>`
   return c.body(svg, 200, { 'content-type': 'image/svg+xml', 'cache-control': 'public, max-age=86400' })
 })
 
@@ -101,6 +101,21 @@ app.get('/product', (c) => {
 
   const { basePrice, listPrice, ...product } = products[id]
   return c.json(product)
+})
+
+// Accent- and case-insensitive, so "tenis" finds "Tênis".
+const fold = (s: string) => s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
+
+// shortcut: linear scan over the in-memory catalog; move to a search index when the catalog is real.
+app.get('/search', (c) => {
+  const q = (c.req.query('q') ?? '').trim()
+  if (q.length < 2 || q.length > 50) return c.json({ error: 'q must have 2 to 50 characters' }, 400)
+  const terms = fold(q).split(/\s+/)
+  const results = Object.values(products).filter((p) => {
+    const text = fold(`${p.name} ${p.brand} ${p.description}`)
+    return terms.every((term) => text.includes(term))
+  })
+  return c.json({ q, products: results.map(card) })
 })
 
 // Batch prices: /prices?ids=a,b,c with the warehouse header. Unknown ids are left out.

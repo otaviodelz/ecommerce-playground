@@ -69,8 +69,9 @@ test('set-location maps cep to warehouse', async () => {
 test('page and product return content without prices', async () => {
   const page = await (await app.request('/page?cid=home')).json()
   const shelf = page.blocks.find((b: any) => b.type === 'shelf')
-  assert.deepEqual(page.blocks.map((b: any) => b.type), ['info-bar', 'banner', 'categories', 'shelf', 'benefits', 'banner', 'shelf'])
+  assert.deepEqual(page.blocks.map((b: any) => b.type), ['info-bar', 'hero', 'categories', 'shelf', 'benefits', 'banner', 'shelf'])
   assert.equal(page.blocks[1].slides.length, 3)
+  assert.equal(page.blocks[1].actions[0].label, 'Ver ofertas')
   assert.deepEqual(shelf.products[0], { id: 'tenis-runner', name: 'Tênis Runner', brand: 'Acme', image: '/images/tenis.svg' })
   assert.equal((await app.request('/page?cid=nope')).status, 404)
 
@@ -88,6 +89,18 @@ test('page and product return content without prices', async () => {
   assert.equal(product.name, 'Tênis Runner')
   assert.deepEqual([product.price, product.listPrice, product.basePrice], [undefined, undefined, undefined])
   assert.equal((await app.request('/product?id=nope')).status, 404)
+})
+
+test('search matches name, brand and description ignoring accents and case', async () => {
+  const ids = async (q: string) => (await (await app.request(`/search?q=${encodeURIComponent(q)}`)).json()).products.map((p: any) => p.id)
+  assert.deepEqual(await ids('tenis'), ['tenis-runner'])
+  assert.deepEqual(await ids('PULSE'), ['relogio-gps', 'fone-sport'])
+  assert.deepEqual(await ids('mochila notebook'), ['mochila-urban'])
+  assert.deepEqual(await ids('nada-disso'), [])
+  assert.equal((await app.request('/search?q=a')).status, 400)
+  assert.equal((await app.request('/search')).status, 400)
+  const first = (await (await app.request('/search?q=tenis')).json()).products[0]
+  assert.equal(first.price, undefined)
 })
 
 test('prices change with warehouse, in batch', async () => {

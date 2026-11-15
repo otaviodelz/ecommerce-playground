@@ -15,15 +15,17 @@ async function ProductDetail({ params }: Pick<PageProps<"/product/[id]">, "param
     <article className="product">
       <img src={product.images[0]} alt={product.name} width={600} height={600} />
       <div className="stack">
-        <p className="muted">{product.brand}</p>
+        <p className="muted mono">{product.brand}</p>
         <h1>{product.name}</h1>
         <Price id={product.id} />
         <form action={addItem}>
           <input type="hidden" name="productId" value={product.id} />
-          <Button type="submit">Adicionar à cesta</Button>
+          <Button type="submit" data-variant="solid">
+            Adicionar à cesta
+          </Button>
         </form>
-        <p>{product.description}</p>
-        <dl>
+        <p className="muted">{product.description}</p>
+        <dl className="specs">
           {Object.entries(product.specs).map(([key, value]) => (
             <div key={key}>
               <dt className="muted">{key}</dt>

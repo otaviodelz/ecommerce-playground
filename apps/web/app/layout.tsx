@@ -4,8 +4,9 @@ import Link from "next/link"
 import { Suspense } from "react"
 import "@ui-sdk/core/web.css"
 import "./globals.css"
+import { api, type Basket } from "@/lib/api"
 import { setLocation } from "./actions"
-import { CepForm } from "./forms"
+import { CategoryBar, CategoryLinks, CepPopover, SearchForm } from "./header"
 
 export const metadata: Metadata = {
   title: "Playground Store",
@@ -15,15 +16,16 @@ export const metadata: Metadata = {
 async function Session() {
   const jar = await cookies()
   const name = jar.get("name")?.value
+  const basket = await api<Basket>("/basket")
+  const count = basket.ok ? basket.data.items.reduce((sum, item) => sum + item.quantity, 0) : 0
   return (
-    <>
-      <CepForm action={setLocation} defaultCep={jar.get("cep")?.value} />
-      <nav className="nav">
-        <span className="muted">Estoque: {jar.get("wh")?.value ?? "br-01"}</span>
-        <Link href="/basket">Cesta</Link>
-        {name ? <span>Olá, {name}</span> : <Link href="/login">Entrar</Link>}
-      </nav>
-    </>
+    <div className="session">
+      <CepPopover action={setLocation} cep={jar.get("cep")?.value} />
+      {name ? <span>olá, {name.split(" ")[0].toLowerCase()}</span> : <Link href="/login">entrar</Link>}
+      <Link href="/basket" aria-label={`Cesta, ${count} ${count === 1 ? "item" : "itens"}`}>
+        cesta <span className="count">[{count}]</span>
+      </Link>
+    </div>
   )
 }
 
@@ -33,12 +35,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body>
         <header className="header">
           <Link href="/" className="logo">
-            Playground Store
+            playground
           </Link>
-          <Suspense fallback={null}>
+          <SearchForm />
+          <Suspense fallback={<div className="session" />}>
             <Session />
           </Suspense>
         </header>
+        <Suspense fallback={<CategoryLinks />}>
+          <CategoryBar />
+        </Suspense>
         <main className="main">{children}</main>
       </body>
     </html>

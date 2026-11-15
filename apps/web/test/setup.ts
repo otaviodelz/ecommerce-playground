@@ -20,5 +20,10 @@ globalThis.ResizeObserver ??= class {
   unobserve() {}
   disconnect() {}
 }
+document.head.append(
+  Object.assign(document.createElement("style"), {
+    textContent: "[popover] { display: block !important }",
+  }),
+)
 
 afterEach(cleanup)
