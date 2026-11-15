@@ -69,9 +69,20 @@ test('set-location maps cep to warehouse', async () => {
 test('page and product return content without prices', async () => {
   const page = await (await app.request('/page?cid=home')).json()
   const shelf = page.blocks.find((b: any) => b.type === 'shelf')
-  assert.equal(page.blocks[0].type, 'banner')
+  assert.deepEqual(page.blocks.map((b: any) => b.type), ['info-bar', 'banner', 'categories', 'shelf', 'benefits', 'banner', 'shelf'])
+  assert.equal(page.blocks[1].slides.length, 3)
   assert.deepEqual(shelf.products[0], { id: 'tenis-runner', name: 'Tênis Runner', brand: 'Acme', image: '/images/tenis.svg' })
   assert.equal((await app.request('/page?cid=nope')).status, 404)
+
+  // every category the home links to is a page, and every shelf lists real products
+  const categories = page.blocks.find((b: any) => b.type === 'categories').items
+  for (const cid of ['home', ...categories.map((c: any) => new URLSearchParams(c.link.split('?')[1]).get('cid'))]) {
+    const res = await app.request(`/page?cid=${cid}`)
+    assert.equal(res.status, 200, cid)
+    for (const b of (await res.json()).blocks.filter((b: any) => b.type === 'shelf')) {
+      for (const p of b.products) assert.ok(p.name && p.image, `${cid}/${b.id}`)
+    }
+  }
 
   const product = await (await app.request('/product?id=tenis-runner')).json()
   assert.equal(product.name, 'Tênis Runner')

@@ -4,9 +4,13 @@ import { cache } from "react"
 import { API_URL } from "./config"
 
 export type ProductCard = { id: string; name: string; brand: string; image: string }
+export type BannerSlide = { image: string; link: string; alt: string }
 export type Block =
-  | { type: "banner"; id: string; image: string; link: string }
+  | { type: "banner"; id: string; slides: BannerSlide[] }
   | { type: "shelf"; id: string; title: string; products: ProductCard[] }
+  | { type: "info-bar"; id: string; text: string; link?: string }
+  | { type: "categories"; id: string; title: string; items: { label: string; image: string; link: string }[] }
+  | { type: "benefits"; id: string; items: { title: string; description: string }[] }
 export type Product = Omit<ProductCard, "image"> & { description: string; images: string[]; specs: Record<string, string> }
 export type PriceInfo = { price: number; listPrice: number }
 export type Basket = { items: (ProductCard & PriceInfo & { quantity: number; total: number })[]; subtotal: number }

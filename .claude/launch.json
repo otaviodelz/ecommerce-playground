@@ -12,6 +12,18 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "web", "dev"],
       "port": 3000
+    },
+    {
+      "name": "server-prod",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "server", "start"],
+      "port": 3333
+    },
+    {
+      "name": "web-prod",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "web", "start"],
+      "port": 3000
     }
   ]
 }

@@ -63,21 +63,88 @@ export const products: Record<string, Product> = {
     images: ['/images/garrafa.svg'],
     basePrice: 8990, listPrice: 9990, specs: { Volume: '750ml' },
   },
+  'bermuda-dry': {
+    id: 'bermuda-dry', name: 'Bermuda Dry', brand: 'Acme',
+    description: 'Bermuda de secagem rápida com bolso traseiro.',
+    images: ['/images/bermuda.svg'],
+    basePrice: 7990, listPrice: 9990, specs: { Material: 'Poliéster' },
+  },
+  'meia-pro': {
+    id: 'meia-pro', name: 'Meia Pro', brand: 'Acme',
+    description: 'Meia de compressão leve, kit com 3 pares.',
+    images: ['/images/meia.svg'],
+    basePrice: 2990, listPrice: 3990, specs: { Pares: '3' },
+  },
+  'bone-trail': {
+    id: 'bone-trail', name: 'Boné Trail', brand: 'Trail',
+    description: 'Boné com proteção UV e ajuste traseiro.',
+    images: ['/images/bone.svg'],
+    basePrice: 6990, listPrice: 6990, specs: { Proteção: 'UV50+' },
+  },
+  'jaqueta-corta-vento': {
+    id: 'jaqueta-corta-vento', name: 'Jaqueta Corta-Vento', brand: 'Trail',
+    description: 'Jaqueta leve e compactável, resistente à garoa.',
+    images: ['/images/jaqueta.svg'],
+    basePrice: 24990, listPrice: 29990, specs: { Peso: '180g' },
+  },
+  'relogio-gps': {
+    id: 'relogio-gps', name: 'Relógio GPS', brand: 'Pulse',
+    description: 'GPS, frequência cardíaca e 7 dias de bateria.',
+    images: ['/images/relogio.svg'],
+    basePrice: 89990, listPrice: 99990, specs: { Bateria: '7 dias', 'À prova d\'água': '5 ATM' },
+  },
+  'fone-sport': {
+    id: 'fone-sport', name: 'Fone Sport', brand: 'Pulse',
+    description: 'Fone sem fio resistente ao suor.',
+    images: ['/images/fone.svg'],
+    basePrice: 19990, listPrice: 24990, specs: { Bateria: '8h' },
+  },
 }
 
 // customerId -> (productId -> quantity). Prices are applied at read time from the warehouse header.
 export const baskets = new Map<string, Map<string, number>>()
 export const MAX_ITEM_QUANTITY = 99
 
+// A banner with more than one slide is shown as a carousel; shelves always are.
 export type Block =
-  | { type: 'banner'; id: string; image: string; link: string }
+  | { type: 'banner'; id: string; slides: { image: string; link: string; alt: string }[] }
   | { type: 'shelf'; id: string; title: string; productIds: string[] }
+  | { type: 'info-bar'; id: string; text: string; link?: string }
+  | { type: 'categories'; id: string; title: string; items: { label: string; image: string; link: string }[] }
+  | { type: 'benefits'; id: string; items: { title: string; description: string }[] }
+
+const slide = (slug: string, link: string, alt: string, h = 400) => ({ image: `/images/${slug}.svg?w=1200&h=${h}`, link, alt })
+const shelf = (id: string, title: string, productIds: string[]): Block => ({ type: 'shelf', id, title, productIds })
 
 export const pages: Record<string, Block[]> = {
   home: [
-    { type: 'banner', id: 'hero', image: '/images/hero.svg?w=1200&h=400', link: '/product/tenis-runner' },
-    { type: 'shelf', id: 'best-sellers', title: 'Mais vendidos', productIds: ['tenis-runner', 'camiseta-basic', 'mochila-urban'] },
-    { type: 'banner', id: 'promo', image: '/images/promo.svg?w=1200&h=300', link: '/page?cid=home' },
-    { type: 'shelf', id: 'new', title: 'Novidades', productIds: ['garrafa-termica', 'mochila-urban'] },
+    { type: 'info-bar', id: 'shipping', text: 'Frete grátis nas compras acima de R$ 199', link: '/page?cid=corrida' },
+    {
+      type: 'banner', id: 'hero', slides: [
+        slide('hero-corrida', '/product/tenis-runner', 'Tênis Runner com até 25% off'),
+        slide('hero-relogio', '/product/relogio-gps', 'Relógio GPS: treine com dados'),
+        slide('hero-inverno', '/product/jaqueta-corta-vento', 'Coleção corta-vento'),
+      ],
+    },
+    {
+      type: 'categories', id: 'departments', title: 'Compre por categoria', items: [
+        { label: 'Corrida', image: '/images/corrida.svg?w=300&h=300', link: '/page?cid=corrida' },
+        { label: 'Acessórios', image: '/images/acessorios.svg?w=300&h=300', link: '/page?cid=acessorios' },
+        { label: 'Eletrônicos', image: '/images/eletronicos.svg?w=300&h=300', link: '/page?cid=eletronicos' },
+      ],
+    },
+    shelf('best-sellers', 'Mais vendidos', ['tenis-runner', 'camiseta-basic', 'mochila-urban', 'relogio-gps', 'bermuda-dry', 'fone-sport']),
+    {
+      type: 'benefits', id: 'benefits', items: [
+        { title: 'Frete grátis', description: 'Acima de R$ 199 para todo o Brasil' },
+        { title: 'Troca fácil', description: '30 dias para trocar ou devolver' },
+        { title: 'Até 10x sem juros', description: 'No cartão de crédito' },
+      ],
+    },
+    { type: 'banner', id: 'promo', slides: [slide('promo', '/page?cid=acessorios', 'Acessórios a partir de R$ 29,90', 300)] },
+    shelf('new', 'Novidades', ['jaqueta-corta-vento', 'garrafa-termica', 'bone-trail', 'meia-pro', 'mochila-urban']),
   ],
+  corrida: [shelf('running', 'Corrida', ['tenis-runner', 'bermuda-dry', 'meia-pro', 'camiseta-basic', 'jaqueta-corta-vento'])],
+  acessorios: [shelf('accessories', 'Acessórios', ['mochila-urban', 'garrafa-termica', 'bone-trail', 'meia-pro'])],
+  eletronicos: [shelf('electronics', 'Eletrônicos', ['relogio-gps', 'fone-sport'])],
 }

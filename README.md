@@ -12,7 +12,7 @@ Hono em `http://localhost:3333` (`PORT`, `JWT_SECRET` via env). Preços em centa
 | POST | `/login` | `{ email, password }` | tokens, `customerId`, `name`, `email` |
 | POST | `/refresh-token` | `{ refreshToken }` | novos `accessToken`, `refreshToken`, `customerId` |
 | POST | `/set-location` | `{ cep }` | `{ warehouse }` |
-| GET | `/page?cid=home` | — | blocos CMS (`banner`, `shelf`), sem preço |
+| GET | `/page?cid=home` | — | blocos CMS (`info-bar`, `banner`, `categories`, `shelf`, `benefits`), sem preço |
 | GET | `/product?id=tenis-runner` | — | dados da PDP, sem preço |
 | GET | `/prices?ids=a,b` | header `warehouse` | `{ warehouse, prices: { [id]: { price, listPrice } } }` |
 | GET | `/basket` | headers `authorization`, `warehouse` | itens com preço, `subtotal` |
@@ -21,6 +21,7 @@ Hono em `http://localhost:3333` (`PORT`, `JWT_SECRET` via env). Preços em centa
 | GET | `/images/<slug>.svg?w=&h=` | — | placeholder SVG |
 
 Conteúdo (`/page`, `/product`) é igual para todos; preço vem de `/prices` pelo warehouse.
+Páginas CMS: `home`, `corrida`, `acessorios`, `eletronicos`. Banner com mais de um slide e vitrines viram carrossel no web.
 Sem header `warehouse` usa `br-01`; warehouse desconhecido → 400.
 Rotas de cesta exigem `authorization: Bearer <accessToken>` (guest ou logado); máx. 99 unidades por item.
 Usuário de teste: veja `apps/server/src/data.ts`.
