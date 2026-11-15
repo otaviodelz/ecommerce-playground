@@ -1,15 +1,14 @@
 import { Button } from "@ui-sdk/react/button"
 import { notFound } from "next/navigation"
 import { Suspense } from "react"
-import { api, type Product } from "@/lib/api"
+import { getContent, type Product } from "@/lib/api"
 import { addItem } from "../actions"
-import { Prices } from "../cms"
+import { Price } from "../price"
 
 async function ProductDetail({ searchParams }: Pick<PageProps<"/product">, "searchParams">) {
   const { id } = await searchParams
-  const res = await api<Product>(`/product?id=${encodeURIComponent(String(id ?? ""))}`)
+  const res = await getContent<Product>(`/product?id=${encodeURIComponent(String(id ?? ""))}`)
   if (res.status === 404) notFound()
-  if (!res.ok) throw new Error(res.data.error ?? "Erro ao carregar o produto.")
   const product = res.data
 
   return (
@@ -18,7 +17,7 @@ async function ProductDetail({ searchParams }: Pick<PageProps<"/product">, "sear
       <div className="stack">
         <p className="muted">{product.brand}</p>
         <h1>{product.name}</h1>
-        <Prices price={product.price} listPrice={product.listPrice} />
+        <Price id={product.id} />
         <form action={addItem}>
           <input type="hidden" name="productId" value={product.id} />
           <Button type="submit">Adicionar à cesta</Button>
@@ -37,6 +36,7 @@ async function ProductDetail({ searchParams }: Pick<PageProps<"/product">, "sear
   )
 }
 
+// searchParams is request data, so the page body streams; the product content itself comes from the cache.
 export default function ProductPage({ searchParams }: PageProps<"/product">) {
   return (
     <Suspense fallback={<p>Carregando…</p>}>

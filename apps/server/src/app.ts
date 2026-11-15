@@ -20,8 +20,7 @@ function priced(p: Product, warehouse: string) {
   return { price: Math.round(p.basePrice * f), listPrice: Math.round(p.listPrice * f) }
 }
 
-const card = (p: Product, warehouse: string) =>
-  ({ id: p.id, name: p.name, brand: p.brand, image: p.images[0], ...priced(p, warehouse) })
+const card = (p: Product) => ({ id: p.id, name: p.name, brand: p.brand, image: p.images[0] })
 
 async function customerOf(c: Context) {
   const token = c.req.header('authorization')?.replace(/^Bearer /i, '')
@@ -30,8 +29,8 @@ async function customerOf(c: Context) {
 
 function basketView(customerId: string, warehouse: string) {
   const items = [...(baskets.get(customerId) ?? [])].map(([id, quantity]) => {
-    const item = card(products[id], warehouse)
-    return { ...item, quantity, total: item.price * quantity }
+    const prices = priced(products[id], warehouse)
+    return { ...card(products[id]), ...prices, quantity, total: prices.price * quantity }
   })
   return { customerId, warehouse, items, subtotal: items.reduce((sum, i) => sum + i.total, 0) }
 }
@@ -83,28 +82,36 @@ app.post('/set-location', async (c) => {
   return c.json({ warehouse: warehouseForCep(cep.replace('-', '')) })
 })
 
+// /page and /product are the same for everyone (cacheable); prices come from /prices per warehouse.
 app.get('/page', (c) => {
-  const warehouse = warehouseOf(c)
-  if (!warehouse) return c.json({ error: 'unknown warehouse' }, 400)
   const cid = c.req.query('cid') ?? ''
   if (!Object.hasOwn(pages, cid)) return c.json({ error: 'page not found' }, 404)
 
   const blocks = pages[cid].map((block) => {
     if (block.type !== 'shelf') return block
     const { productIds, ...shelf } = block
-    return { ...shelf, products: productIds.map((id) => card(products[id], warehouse)) }
+    return { ...shelf, products: productIds.map((id) => card(products[id])) }
   })
-  return c.json({ cid, warehouse, blocks })
+  return c.json({ cid, blocks })
 })
 
 app.get('/product', (c) => {
-  const warehouse = warehouseOf(c)
-  if (!warehouse) return c.json({ error: 'unknown warehouse' }, 400)
   const id = c.req.query('id') ?? ''
   if (!Object.hasOwn(products, id)) return c.json({ error: 'product not found' }, 404)
 
-  const { basePrice, ...product } = products[id]
-  return c.json({ ...product, ...priced(products[id], warehouse), warehouse })
+  const { basePrice, listPrice, ...product } = products[id]
+  return c.json(product)
+})
+
+// Batch prices: /prices?ids=a,b,c with the warehouse header. Unknown ids are left out.
+app.get('/prices', (c) => {
+  const warehouse = warehouseOf(c)
+  if (!warehouse) return c.json({ error: 'unknown warehouse' }, 400)
+  const ids = (c.req.query('ids') ?? '').split(',').filter(Boolean)
+  if (ids.length === 0 || ids.length > 100) return c.json({ error: 'ids must list 1 to 100 product ids' }, 400)
+
+  const prices = Object.fromEntries(ids.filter((id) => Object.hasOwn(products, id)).map((id) => [id, priced(products[id], warehouse)]))
+  return c.json({ warehouse, prices })
 })
 
 // Basket routes need an access token (guest or logged in) and price items by the warehouse header.

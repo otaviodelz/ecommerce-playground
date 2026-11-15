@@ -96,6 +96,16 @@ img {
   border-radius: var(--ui-radius);
 }
 
+.prices {
+  min-height: 1.75rem;
+}
+
+.price-skeleton {
+  width: 8rem;
+  border-radius: var(--ui-radius);
+  background: var(--ui-muted);
+}
+
 .price {
   font-size: 1.125rem;
   font-weight: 700;

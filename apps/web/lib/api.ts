@@ -1,14 +1,50 @@
+import { cacheLife, cacheTag } from "next/cache"
 import { cookies } from "next/headers"
+import { cache } from "react"
 import { API_URL } from "./config"
 
-export type ProductCard = { id: string; name: string; brand: string; image: string; price: number; listPrice: number }
+export type ProductCard = { id: string; name: string; brand: string; image: string }
 export type Block =
   | { type: "banner"; id: string; image: string; link: string }
   | { type: "shelf"; id: string; title: string; products: ProductCard[] }
 export type Product = Omit<ProductCard, "image"> & { description: string; images: string[]; specs: Record<string, string> }
-export type Basket = { items: (ProductCard & { quantity: number; total: number })[]; subtotal: number }
+export type PriceInfo = { price: number; listPrice: number }
+export type Basket = { items: (ProductCard & PriceInfo & { quantity: number; total: number })[]; subtotal: number }
 
-// Server-only: forwards the session cookies (set by proxy.ts and the actions) to the API.
+// Same for every visitor, so it's cached and lands in the static HTML. Tagged by path for revalidation (app/api/revalidate).
+export async function getContent<T>(path: string) {
+  "use cache"
+  cacheTag(path)
+  cacheLife("hours")
+  const res = await fetch(API_URL + path)
+  if (res.status >= 500) throw new Error(`API ${path} failed with ${res.status}`)
+  return { status: res.status, data: (await res.json()) as T }
+}
+
+async function fetchPrices(ids: string, warehouse: string) {
+  "use cache"
+  cacheTag("prices")
+  cacheLife("minutes")
+  const res = await fetch(`${API_URL}/prices?ids=${encodeURIComponent(ids)}`, { headers: warehouse ? { warehouse } : {} })
+  if (!res.ok) throw new Error(`API /prices failed with ${res.status}`)
+  return ((await res.json()) as { prices: Record<string, PriceInfo> }).prices
+}
+
+// Every Price slot on a page passes the page's full id list, so React.cache makes it one request per page.
+const pricesFor = cache(fetchPrices)
+
+// A pricing outage hides prices, not the page. cookies() stays outside the try so Next's render signals aren't swallowed.
+export async function getPrice(id: string, ids: string): Promise<PriceInfo | undefined> {
+  const warehouse = (await cookies()).get("wh")?.value ?? ""
+  try {
+    return (await pricesFor(ids, warehouse))[id]
+  } catch (error) {
+    console.error(error)
+    return undefined
+  }
+}
+
+// Session-bound calls (basket, login, CEP): forwards the cookies set by proxy.ts and the actions.
 export async function api<T>(path: string, body?: unknown) {
   const jar = await cookies()
   const headers: Record<string, string> = { "content-type": "application/json" }
