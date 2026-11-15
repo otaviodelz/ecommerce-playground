@@ -1,7 +1,9 @@
 import { Hono, type Context } from 'hono'
 import { randomUUID } from 'node:crypto'
-import { checkPassword, issueTokens, verifyRefreshToken } from './auth.js'
-import { DEFAULT_WAREHOUSE, pages, products, users, warehouseForCep, warehouses, type Product } from './data.js'
+import { checkPassword, issueTokens, verifyToken } from './auth.js'
+import {
+  baskets, DEFAULT_WAREHOUSE, MAX_ITEM_QUANTITY, pages, products, users, warehouseForCep, warehouses, type Product,
+} from './data.js'
 
 export const app = new Hono()
 
@@ -16,6 +18,22 @@ function warehouseOf(c: Context) {
 function priced(p: Product, warehouse: string) {
   const f = warehouses[warehouse].priceFactor
   return { price: Math.round(p.basePrice * f), listPrice: Math.round(p.listPrice * f) }
+}
+
+const card = (p: Product, warehouse: string) =>
+  ({ id: p.id, name: p.name, brand: p.brand, image: p.images[0], ...priced(p, warehouse) })
+
+async function customerOf(c: Context) {
+  const token = c.req.header('authorization')?.replace(/^Bearer /i, '')
+  return token ? (await verifyToken(token, 'access'))?.customerId : undefined
+}
+
+function basketView(customerId: string, warehouse: string) {
+  const items = [...(baskets.get(customerId) ?? [])].map(([id, quantity]) => {
+    const item = card(products[id], warehouse)
+    return { ...item, quantity, total: item.price * quantity }
+  })
+  return { customerId, warehouse, items, subtotal: items.reduce((sum, i) => sum + i.total, 0) }
 }
 
 app.post('/guest-login', async (c) => {
@@ -38,7 +56,7 @@ app.post('/login', async (c) => {
 app.post('/refresh-token', async (c) => {
   const { refreshToken } = await body(c)
   if (typeof refreshToken !== 'string') return c.json({ error: 'refreshToken is required' }, 400)
-  const session = await verifyRefreshToken(refreshToken)
+  const session = await verifyToken(refreshToken, 'refresh')
   if (!session) return c.json({ error: 'invalid refresh token' }, 401)
   return c.json({ ...(await issueTokens(session.customerId, session.guest)), customerId: session.customerId })
 })
@@ -60,13 +78,7 @@ app.get('/page', (c) => {
   const blocks = pages[cid].map((block) => {
     if (block.type !== 'shelf') return block
     const { productIds, ...shelf } = block
-    return {
-      ...shelf,
-      products: productIds.map((id) => {
-        const p = products[id]
-        return { id: p.id, name: p.name, brand: p.brand, image: p.images[0], ...priced(p, warehouse) }
-      }),
-    }
+    return { ...shelf, products: productIds.map((id) => card(products[id], warehouse)) }
   })
   return c.json({ cid, warehouse, blocks })
 })
@@ -79,4 +91,42 @@ app.get('/product', (c) => {
 
   const { basePrice, ...product } = products[id]
   return c.json({ ...product, ...priced(products[id], warehouse), warehouse })
+})
+
+// Basket routes need an access token (guest or logged in) and price items by the warehouse header.
+app.get('/basket', async (c) => {
+  const customerId = await customerOf(c)
+  if (!customerId) return c.json({ error: 'unauthorized' }, 401)
+  const warehouse = warehouseOf(c)
+  if (!warehouse) return c.json({ error: 'unknown warehouse' }, 400)
+  return c.json(basketView(customerId, warehouse))
+})
+
+app.post('/add-item', async (c) => {
+  const customerId = await customerOf(c)
+  if (!customerId) return c.json({ error: 'unauthorized' }, 401)
+  const warehouse = warehouseOf(c)
+  if (!warehouse) return c.json({ error: 'unknown warehouse' }, 400)
+  const { productId, quantity = 1 } = await body(c)
+  if (typeof productId !== 'string' || !Object.hasOwn(products, productId)) {
+    return c.json({ error: 'product not found' }, 404)
+  }
+  const basket = baskets.get(customerId) ?? new Map<string, number>()
+  const next = (basket.get(productId) ?? 0) + (quantity as number)
+  if (!Number.isInteger(quantity) || (quantity as number) < 1 || next > MAX_ITEM_QUANTITY) {
+    return c.json({ error: `quantity must be a positive integer, max ${MAX_ITEM_QUANTITY} per item` }, 400)
+  }
+  baskets.set(customerId, basket.set(productId, next))
+  return c.json(basketView(customerId, warehouse))
+})
+
+app.post('/delete-item', async (c) => {
+  const customerId = await customerOf(c)
+  if (!customerId) return c.json({ error: 'unauthorized' }, 401)
+  const warehouse = warehouseOf(c)
+  if (!warehouse) return c.json({ error: 'unknown warehouse' }, 400)
+  const { productId } = await body(c)
+  if (typeof productId !== 'string') return c.json({ error: 'productId is required' }, 400)
+  baskets.get(customerId)?.delete(productId)
+  return c.json(basketView(customerId, warehouse))
 })

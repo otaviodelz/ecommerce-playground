@@ -15,5 +15,10 @@ Hono em `http://localhost:3333` (`PORT`, `JWT_SECRET` via env). Preços em centa
 | GET | `/page?cid=home` | header `warehouse` | blocos CMS (`banner`, `shelf`) |
 | GET | `/product?id=tenis-runner` | header `warehouse` | dados da PDP com preço do warehouse |
 
+| GET | `/basket` | headers `authorization`, `warehouse` | itens, `subtotal` |
+| POST | `/add-item` | `{ productId, quantity? }` + headers | cesta atualizada |
+| POST | `/delete-item` | `{ productId }` + headers | cesta atualizada |
+
 Sem header `warehouse` usa `br-01`; warehouse desconhecido → 400.
+Rotas de cesta exigem `authorization: Bearer <accessToken>` (guest ou logado); máx. 99 unidades por item.
 Usuário de teste: veja `apps/server/src/data.ts`.

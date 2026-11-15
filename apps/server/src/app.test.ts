@@ -80,3 +80,41 @@ test('product prices change with warehouse', async () => {
   assert.equal(sp.name, 'Tênis Runner')
   assert.equal((await app.request('/product?id=nope')).status, 404)
 })
+
+test('basket add/delete is per customer and priced by warehouse', async () => {
+  const { accessToken, refreshToken } = await (await post('/guest-login', {})).json()
+  const call = (path: string, body?: unknown, headers: Record<string, string> = {}) =>
+    app.request(path, {
+      method: body === undefined ? 'GET' : 'POST',
+      body: body === undefined ? undefined : JSON.stringify(body),
+      headers: { authorization: `Bearer ${accessToken}`, 'content-type': 'application/json', warehouse: 'sp-01', ...headers },
+    })
+
+  assert.deepEqual((await (await call('/basket')).json()).items, [])
+  await call('/add-item', { productId: 'tenis-runner' })
+  const added = await (await call('/add-item', { productId: 'tenis-runner', quantity: 2 })).json()
+  assert.equal(added.items[0].quantity, 3)
+  assert.equal(added.subtotal, 29990 * 3)
+
+  const rj = await (await call('/basket', undefined, { warehouse: 'rj-01' })).json()
+  assert.equal(rj.subtotal, 31490 * 3)
+
+  await call('/add-item', { productId: 'camiseta-basic' })
+  const afterDelete = await (await call('/delete-item', { productId: 'tenis-runner' })).json()
+  assert.deepEqual(afterDelete.items.map((i: any) => i.id), ['camiseta-basic'])
+  assert.equal(afterDelete.subtotal, 5990)
+
+  // another customer sees an empty basket
+  const other = await (await post('/guest-login', {})).json()
+  const otherBasket = await (await call('/basket', undefined, { authorization: `Bearer ${other.accessToken}` })).json()
+  assert.deepEqual(otherBasket.items, [])
+
+  assert.equal((await call('/add-item', { productId: 'nope' })).status, 404)
+  assert.equal((await call('/add-item', { productId: 'camiseta-basic', quantity: 0 })).status, 400)
+  assert.equal((await call('/add-item', { productId: 'camiseta-basic', quantity: '2' })).status, 400)
+  assert.equal((await call('/add-item', { productId: 'camiseta-basic', quantity: 99 })).status, 400) // over max
+  assert.equal((await call('/delete-item', {})).status, 400)
+  assert.equal((await call('/basket', undefined, { warehouse: 'toString' })).status, 400)
+  assert.equal((await call('/basket', undefined, { authorization: '' })).status, 401)
+  assert.equal((await call('/basket', undefined, { authorization: `Bearer ${refreshToken}` })).status, 401)
+})

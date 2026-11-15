@@ -27,8 +27,8 @@ export async function issueTokens(customerId: string, guest: boolean) {
 }
 
 // shortcut: no revocation store, so a used refresh token stays valid until it expires; add a denylist/DB when real sessions exist.
-export async function verifyRefreshToken(token: string) {
+export async function verifyToken(token: string, type: 'access' | 'refresh') {
   const payload = await verify(token, secret, 'HS256').catch(() => null)
-  if (payload?.type !== 'refresh' || typeof payload.sub !== 'string') return null
+  if (payload?.type !== type || typeof payload.sub !== 'string') return null
   return { customerId: payload.sub, guest: payload.guest === true }
 }

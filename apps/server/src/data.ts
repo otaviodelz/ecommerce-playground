@@ -65,6 +65,10 @@ export const products: Record<string, Product> = {
   },
 }
 
+// customerId -> (productId -> quantity). Prices are applied at read time from the warehouse header.
+export const baskets = new Map<string, Map<string, number>>()
+export const MAX_ITEM_QUANTITY = 99
+
 export type Block =
   | { type: 'banner'; id: string; image: string; link: string }
   | { type: 'shelf'; id: string; title: string; productIds: string[] }
