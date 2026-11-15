@@ -4,11 +4,9 @@ import { createInputController, Input } from "@ui-sdk/react/input"
 import { Popover, PopoverContent, PopoverDescription, PopoverTitle, PopoverTrigger } from "@ui-sdk/react/popover"
 import { useShortcut, useShortcutHint } from "@ui-sdk/react/shortcuts"
 import Form from "next/form"
-import Link from "next/link"
-import { usePathname, useSearchParams } from "next/navigation"
 import { useState } from "react"
-import type { FormAction } from "./actions"
-import { CepForm } from "./forms"
+import type { FormAction } from "@/lib/actions"
+import { CepForm } from "../forms"
 
 function SearchForm() {
   const [input] = useState(createInputController)
@@ -38,32 +36,4 @@ function CepPopover({ action, cep }: { action: FormAction; cep?: string }) {
   )
 }
 
-const categories = [
-  { label: "Início", href: "/" },
-  { label: "Corrida", href: "/page?cid=corrida" },
-  { label: "Acessórios", href: "/page?cid=acessorios" },
-  { label: "Eletrônicos", href: "/page?cid=eletronicos" },
-  { label: "Novidades", href: "/page?cid=novidades" },
-  { label: "Ofertas", href: "/page?cid=ofertas", deal: true },
-]
-
-function CategoryLinks({ current }: { current?: string }) {
-  return (
-    <nav className="catbar" aria-label="Categorias">
-      {categories.map((c) => (
-        <Link key={c.href} href={c.href} className={c.deal ? "deal" : undefined} aria-current={c.href === current ? "page" : undefined}>
-          {c.label}
-        </Link>
-      ))}
-    </nav>
-  )
-}
-
-// Reads the URL on the client, so the layout stays static; the Suspense fallback is the same bar without a current item.
-function CategoryBar() {
-  const pathname = usePathname()
-  const cid = useSearchParams().get("cid")
-  return <CategoryLinks current={pathname === "/page" ? `/page?cid=${cid}` : pathname} />
-}
-
-export { CategoryBar, CategoryLinks, CepPopover, SearchForm }
+export { CepPopover, SearchForm }

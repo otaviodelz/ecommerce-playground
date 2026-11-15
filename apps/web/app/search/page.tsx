@@ -1,6 +1,6 @@
 import { Suspense } from "react"
 import { api, type ProductCard as Card } from "@/lib/api"
-import { ProductCard } from "../cms"
+import { ProductCard } from "@/components/product/product-card"
 
 // Search results are per query, so they skip the content cache (unbounded keys) and go straight to the API.
 async function Results({ searchParams }: Pick<PageProps<"/search">, "searchParams">) {

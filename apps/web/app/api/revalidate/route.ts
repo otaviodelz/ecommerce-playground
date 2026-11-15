@@ -4,7 +4,7 @@ import { timingSafeEqual } from "node:crypto"
 const matches = (given: string | null, secret: string) =>
   given !== null && given.length === secret.length && timingSafeEqual(Buffer.from(given), Buffer.from(secret))
 
-// CMS/catalog webhook: POST { "tag": "/page?cid=home" | "/product?id=..." | "prices" } with x-revalidate-secret.
+// CMS/catalog webhook: POST { "tag": "/page?cid=home" | "/category?id=..." | "/product?id=..." | "prices" } with x-revalidate-secret.
 export async function POST(request: Request) {
   const secret = process.env.REVALIDATE_SECRET
   if (!secret || !matches(request.headers.get("x-revalidate-secret"), secret)) {

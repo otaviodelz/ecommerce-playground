@@ -31,12 +31,25 @@ export async function setLocation(form: FormData) {
   return {}
 }
 
-export async function addItem(form: FormData) {
-  const res = await api("/add-item", { productId: form.get("productId") })
-  if (!res.ok) throw new Error(res.data.error ?? "Não foi possível adicionar o item.")
-  // The header's basket count lives in the shared layout, which a redirect alone doesn't re-render.
+export type AddItem = (productId: string) => Promise<{ error?: string; locationRequired?: boolean }>
+
+export async function addItem(productId: string) {
+  const res = await api<{ code?: string }>("/add-item", { productId })
+  // Not in stock in every warehouse and no CEP yet: the button asks for one, then calls this again.
+  if (res.data.code === "location_required") return { locationRequired: true }
+  if (res.data.code === "out_of_stock") return { error: "Sem estoque para o seu CEP." }
+  if (!res.ok) return { error: "Não foi possível adicionar o item." }
+  // Re-renders the header's basket count; the visitor stays on the page.
   refresh()
-  redirect("/basket")
+  return {}
+}
+
+export async function setFavorite(productId: string, favorite: boolean) {
+  const res = await api(favorite ? "/add-favorite" : "/delete-favorite", { productId })
+  if (!res.ok) return { error: res.data.error ?? "Não foi possível atualizar os favoritos." }
+  // Re-renders the header count, every heart and /favorites with the saved state.
+  refresh()
+  return {}
 }
 
 export async function deleteItem(form: FormData) {

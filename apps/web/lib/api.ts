@@ -12,8 +12,19 @@ export type Block =
   | { type: "info-bar"; id: string; text: string; link?: string }
   | { type: "categories"; id: string; title: string; items: { label: string; description: string; link: string }[] }
   | { type: "benefits"; id: string; items: { title: string; description: string }[] }
-export type Product = Omit<ProductCard, "image"> & { description: string; images: string[]; specs: Record<string, string> }
+type CategoryRef = { id: string; name: string }
+export type Product = Omit<ProductCard, "image"> & {
+  category: CategoryRef
+  subcategory: CategoryRef
+  description: string
+  images: string[]
+  specs: Record<string, string>
+}
+export type Category = CategoryRef & { description: string; parent?: CategoryRef; products: ProductCard[] }
+export type MenuCategory = CategoryRef & { subcategories: CategoryRef[] }
 export type PriceInfo = { price: number; listPrice: number }
+// Stock comes with the price: in the visitor's warehouse, or in any warehouse while they haven't given a CEP.
+export type Offer = PriceInfo & { available: boolean }
 export type Basket = { items: (ProductCard & PriceInfo & { quantity: number; total: number })[]; subtotal: number }
 
 // Same for every visitor, so it's cached and lands in the static HTML. Tagged by path for revalidation (app/api/revalidate).
@@ -32,14 +43,14 @@ async function fetchPrices(ids: string, warehouse: string) {
   cacheLife("minutes")
   const res = await fetch(`${API_URL}/prices?ids=${encodeURIComponent(ids)}`, { headers: warehouse ? { warehouse } : {} })
   if (!res.ok) throw new Error(`API /prices failed with ${res.status}`)
-  return ((await res.json()) as { prices: Record<string, PriceInfo> }).prices
+  return ((await res.json()) as { prices: Record<string, Offer> }).prices
 }
 
 // Every Price slot on a page passes the page's full id list, so React.cache makes it one request per page.
 const pricesFor = cache(fetchPrices)
 
 // A pricing outage hides prices, not the page. cookies() stays outside the try so Next's render signals aren't swallowed.
-export async function getPrice(id: string, ids: string): Promise<PriceInfo | undefined> {
+export async function getPrice(id: string, ids: string): Promise<Offer | undefined> {
   const warehouse = (await cookies()).get("wh")?.value ?? ""
   try {
     return (await pricesFor(ids, warehouse))[id]
@@ -63,7 +74,10 @@ export async function api<T>(path: string, body?: unknown) {
   return { ok: res.ok, status: res.status, data: data as T & { error?: string } }
 }
 
-export const brl = (cents: number) => (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+// Per visitor, so not cached across requests; React.cache makes the header and every card's heart share one call.
+export const getFavorites = cache(() => api<{ products: ProductCard[] }>("/favorites"))
+
+export const brl =(cents: number) => (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 
 // Up to 10 interest-free installments of at least R$ 10; null when it can't be split.
 export function installments(cents: number) {

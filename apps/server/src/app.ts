@@ -2,10 +2,17 @@ import { Hono, type Context } from 'hono'
 import { randomUUID } from 'node:crypto'
 import { checkPassword, issueTokens, verifyToken } from './auth.js'
 import {
-  baskets, DEFAULT_WAREHOUSE, MAX_ITEM_QUANTITY, pages, products, users, warehouseForCep, warehouses, type Product,
+  baskets, categories, DEFAULT_WAREHOUSE, favorites, inStock, MAX_ITEM_QUANTITY, pages, products, users, warehouseForCep, warehouses,
+  type Product,
 } from './data.js'
 
 export const app = new Hono()
+
+// Simulated network latency to exercise the storefront's loading states; API_DELAY_MS=0 turns it off.
+app.use(async (_, next) => {
+  await new Promise((resolve) => setTimeout(resolve, Number(process.env.API_DELAY_MS ?? 300)))
+  await next()
+})
 
 const body = (c: Context) => c.req.json().catch(() => ({})) as Promise<Record<string, unknown>>
 
@@ -19,6 +26,10 @@ function priced(p: Product, warehouse: string) {
   const f = warehouses[warehouse].priceFactor
   return { price: Math.round(p.basePrice * f), listPrice: Math.round(p.listPrice * f) }
 }
+
+// With a warehouse header: stock there. Without one (visitor hasn't given a CEP): stock in at least one warehouse.
+const available = (p: Product, warehouse: string | undefined) =>
+  warehouse ? inStock(p, warehouse) : Object.keys(warehouses).some((w) => inStock(p, w))
 
 const card = (p: Product) => ({ id: p.id, name: p.name, brand: p.brand, image: p.images[0] })
 
@@ -99,8 +110,31 @@ app.get('/product', (c) => {
   const id = c.req.query('id') ?? ''
   if (!Object.hasOwn(products, id)) return c.json({ error: 'product not found' }, 404)
 
-  const { basePrice, listPrice, ...product } = products[id]
-  return c.json(product)
+  const { basePrice, listPrice, outOfStockIn, category, subcategory, ...product } = products[id]
+  const ref = (id: string) => ({ id, name: categories[id].name })
+  return c.json({ ...product, category: ref(category), subcategory: ref(subcategory) })
+})
+
+// Category tree for the storefront's menu: top-level categories with their subcategories.
+app.get('/categories', (c) => {
+  const all = Object.values(categories)
+  const ref = ({ id, name }: { id: string; name: string }) => ({ id, name })
+  return c.json({
+    categories: all.filter((cat) => !cat.parent).map((cat) => ({ ...ref(cat), subcategories: all.filter((s) => s.parent === cat.id).map(ref) })),
+  })
+})
+
+// Category listing: every product in the category or subcategory, content only (prices come from /prices).
+app.get('/category', (c) => {
+  const id = c.req.query('id') ?? ''
+  if (!Object.hasOwn(categories, id)) return c.json({ error: 'category not found' }, 404)
+  const { parent, ...category } = categories[id]
+  const items = Object.values(products).filter((p) => p.category === id || p.subcategory === id)
+  return c.json({
+    ...category,
+    ...(parent && { parent: { id: parent, name: categories[parent].name } }),
+    products: items.map(card),
+  })
 })
 
 // Accent- and case-insensitive, so "tenis" finds "Tênis".
@@ -118,14 +152,16 @@ app.get('/search', (c) => {
   return c.json({ q, products: results.map(card) })
 })
 
-// Batch prices: /prices?ids=a,b,c with the warehouse header. Unknown ids are left out.
+// Batch prices and stock: /prices?ids=a,b,c with the warehouse header. Unknown ids are left out.
 app.get('/prices', (c) => {
   const warehouse = warehouseOf(c)
   if (!warehouse) return c.json({ error: 'unknown warehouse' }, 400)
   const ids = (c.req.query('ids') ?? '').split(',').filter(Boolean)
   if (ids.length === 0 || ids.length > 100) return c.json({ error: 'ids must list 1 to 100 product ids' }, 400)
 
-  const prices = Object.fromEntries(ids.filter((id) => Object.hasOwn(products, id)).map((id) => [id, priced(products[id], warehouse)]))
+  const prices = Object.fromEntries(ids.filter((id) => Object.hasOwn(products, id)).map((id) => [
+    id, { ...priced(products[id], warehouse), available: available(products[id], c.req.header('warehouse')) },
+  ]))
   return c.json({ warehouse, prices })
 })
 
@@ -147,6 +183,14 @@ app.post('/add-item', async (c) => {
   if (typeof productId !== 'string' || !Object.hasOwn(products, productId)) {
     return c.json({ error: 'product not found' }, 404)
   }
+  const requested = c.req.header('warehouse')
+  if (!available(products[productId], requested)) {
+    return c.json({ error: 'out of stock', code: 'out_of_stock' }, 409)
+  }
+  // No CEP yet: fine if every warehouse has it, otherwise the visitor must say where they are first.
+  if (!requested && !Object.keys(warehouses).every((w) => inStock(products[productId], w))) {
+    return c.json({ error: 'not in stock everywhere, set a location first', code: 'location_required' }, 409)
+  }
   const basket = baskets.get(customerId) ?? new Map<string, number>()
   const next = (basket.get(productId) ?? 0) + (quantity as number)
   if (!Number.isInteger(quantity) || (quantity as number) < 1 || next > MAX_ITEM_QUANTITY) {
@@ -165,4 +209,33 @@ app.post('/delete-item', async (c) => {
   if (typeof productId !== 'string') return c.json({ error: 'productId is required' }, 400)
   baskets.get(customerId)?.delete(productId)
   return c.json(basketView(customerId, warehouse))
+})
+
+// Favorites need an access token like the basket, but are content only: the storefront prices them with /prices.
+const favoritesView = (customerId: string) => ({ customerId, products: [...(favorites.get(customerId) ?? [])].map((id) => card(products[id])) })
+
+app.get('/favorites', async (c) => {
+  const customerId = await customerOf(c)
+  if (!customerId) return c.json({ error: 'unauthorized' }, 401)
+  return c.json(favoritesView(customerId))
+})
+
+app.post('/add-favorite', async (c) => {
+  const customerId = await customerOf(c)
+  if (!customerId) return c.json({ error: 'unauthorized' }, 401)
+  const { productId } = await body(c)
+  if (typeof productId !== 'string' || !Object.hasOwn(products, productId)) {
+    return c.json({ error: 'product not found' }, 404)
+  }
+  favorites.set(customerId, (favorites.get(customerId) ?? new Set<string>()).add(productId))
+  return c.json(favoritesView(customerId))
+})
+
+app.post('/delete-favorite', async (c) => {
+  const customerId = await customerOf(c)
+  if (!customerId) return c.json({ error: 'unauthorized' }, 401)
+  const { productId } = await body(c)
+  if (typeof productId !== 'string') return c.json({ error: 'productId is required' }, 400)
+  favorites.get(customerId)?.delete(productId)
+  return c.json(favoritesView(customerId))
 })

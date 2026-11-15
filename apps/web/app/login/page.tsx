@@ -1,5 +1,5 @@
-import { login } from "../actions"
-import { LoginForm } from "../forms"
+import { login } from "@/lib/actions"
+import { LoginForm } from "@/components/forms"
 
 export default function LoginPage() {
   return (

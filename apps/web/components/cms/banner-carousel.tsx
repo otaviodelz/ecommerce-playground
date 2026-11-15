@@ -16,7 +16,7 @@ import type { BannerSlide } from "@/lib/api"
 
 function BannerImage({ slide }: { slide: BannerSlide }) {
   return (
-    <Link href={slide.link} className="banner">
+    <Link href={slide.link} prefetch className="banner">
       <img src={slide.image} alt={slide.alt} width={1200} height={400} />
     </Link>
   )

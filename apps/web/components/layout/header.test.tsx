@@ -2,18 +2,11 @@ import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { createAgent } from "@ui-sdk/react/agent"
 import { expect, test, vi } from "vitest"
-import { CategoryLinks, CepPopover, SearchForm } from "./header"
+import { CepPopover, SearchForm } from "./header"
 
 vi.mock("next/form", () => ({ default: (props: React.ComponentProps<"form">) => <form {...props} /> }))
 
 const agent = createAgent()
-
-test("category bar marks only the current category", () => {
-  render(<CategoryLinks current="/page?cid=corrida" />)
-  expect(screen.getByRole("link", { name: "Corrida" }).getAttribute("aria-current")).toBe("page")
-  expect(screen.getByRole("link", { name: "Início" }).getAttribute("aria-current")).toBeNull()
-  expect(screen.getByRole("link", { name: "Ofertas" }).getAttribute("href")).toBe("/page?cid=ofertas")
-})
 
 test("pressing / focuses the search, and the search submits q to /search", async () => {
   const user = userEvent.setup()

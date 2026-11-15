@@ -2,7 +2,7 @@ import { Button } from "@ui-sdk/react/button"
 import Link from "next/link"
 import { Suspense } from "react"
 import { api, brl, type Basket } from "@/lib/api"
-import { deleteItem } from "../actions"
+import { deleteItem } from "@/lib/actions"
 
 async function BasketItems() {
   const res = await api<Basket>("/basket")
@@ -17,7 +17,7 @@ async function BasketItems() {
           <li key={item.id}>
             <img src={item.image} alt="" width={64} height={64} />
             <div>
-              <Link href={`/product/${item.id}`}>{item.name}</Link>
+              <Link href={`/product/${item.id}`} prefetch>{item.name}</Link>
               <p className="muted">
                 {item.quantity} × {brl(item.price)} = {brl(item.total)}
               </p>

@@ -1,9 +1,8 @@
-import { Button } from "@ui-sdk/react/button"
+import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Suspense } from "react"
 import { getContent, type Product } from "@/lib/api"
-import { addItem } from "../../actions"
-import { Price } from "../../price"
+import { Offer } from "@/components/product/offer"
 
 async function ProductDetail({ params }: Pick<PageProps<"/product/[id]">, "params">) {
   const { id } = await params
@@ -15,15 +14,14 @@ async function ProductDetail({ params }: Pick<PageProps<"/product/[id]">, "param
     <article className="product">
       <img src={product.images[0]} alt={product.name} width={600} height={600} />
       <div className="stack">
-        <p className="muted mono">{product.brand}</p>
+        <nav className="breadcrumb" aria-label="Você está em">
+          <Link href={`/c/${product.category.id}`} prefetch>{product.category.name}</Link> ›{" "}
+          <Link href={`/c/${product.subcategory.id}`} prefetch>{product.subcategory.name}</Link> › {product.brand}
+        </nav>
         <h1>{product.name}</h1>
-        <Price id={product.id} />
-        <form action={addItem}>
-          <input type="hidden" name="productId" value={product.id} />
-          <Button type="submit" data-variant="solid">
-            Adicionar à cesta
-          </Button>
-        </form>
+        <div className="offer">
+          <Offer product={product} label="Adicionar à cesta" />
+        </div>
         <p className="muted">{product.description}</p>
         <dl className="specs">
           {Object.entries(product.specs).map(([key, value]) => (
@@ -38,7 +36,13 @@ async function ProductDetail({ params }: Pick<PageProps<"/product/[id]">, "param
   )
 }
 
-// No generateStaticParams: nothing is built per product. The shell is static, the product renders per request from cached content.
+// ISR with Cache Components: one real product is built (Cache Components requires at least one, and rendering a real
+// page lets the build check the route); any other product gets the fallback on its first visit, then is rendered in the
+// background and served complete from then on. params stays awaited inside the Suspense so that fallback shell exists.
+export async function generateStaticParams() {
+  return [{ id: "tenis-runner" }]
+}
+
 export default function ProductPage({ params }: PageProps<"/product/[id]">) {
   return (
     <Suspense fallback={<p>Carregando…</p>}>

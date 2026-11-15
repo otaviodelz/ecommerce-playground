@@ -5,7 +5,7 @@ import { Field, FieldError, FieldLabel } from "@ui-sdk/react/field"
 import { Input } from "@ui-sdk/react/input"
 import { PasswordInput, PasswordInputControl, PasswordInputToggle } from "@ui-sdk/react/password-input"
 import { useState, useTransition, type FormEvent } from "react"
-import type { FormAction } from "./actions"
+import type { FormAction } from "@/lib/actions"
 
 // onSubmit instead of <form action>: React resets the form after an action, wiping the typed values and the error.
 function useFormAction(action: FormAction, onSuccess?: () => void) {
