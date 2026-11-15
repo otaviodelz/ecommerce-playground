@@ -1,0 +1,18 @@
+# ecommerce-playground
+
+Monorepo (pnpm + Turborepo). `pnpm install`, então `pnpm dev` / `pnpm test` / `pnpm build`.
+
+## apps/server
+
+Hono em `http://localhost:3333` (`PORT`, `JWT_SECRET` via env). Preços em centavos.
+
+| Método | Rota | Entrada | Saída |
+|---|---|---|---|
+| POST | `/guest-login` | — | `accessToken`, `refreshToken`, `customerId` |
+| POST | `/login` | `{ email, password }` | tokens, `customerId`, `name`, `email` |
+| POST | `/set-location` | `{ cep }` | `{ warehouse }` |
+| GET | `/page?cid=home` | header `warehouse` | blocos CMS (`banner`, `shelf`) |
+| GET | `/product?id=tenis-runner` | header `warehouse` | dados da PDP com preço do warehouse |
+
+Sem header `warehouse` usa `br-01`; warehouse desconhecido → 400.
+Usuário de teste: veja `apps/server/src/data.ts`.

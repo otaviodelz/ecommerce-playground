@@ -1,0 +1,13 @@
+{
+  "name": "ecommerce-playground",
+  "private": true,
+  "packageManager": "pnpm@10.34.6",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test"
+  },
+  "devDependencies": {
+    "turbo": "^2.11.11"
+  }
+}
