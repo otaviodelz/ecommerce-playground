@@ -14,7 +14,6 @@ Hono em `http://localhost:3333` (`PORT`, `JWT_SECRET` via env). Preços em centa
 | POST | `/set-location` | `{ cep }` | `{ warehouse }` |
 | GET | `/page?cid=home` | header `warehouse` | blocos CMS (`banner`, `shelf`) |
 | GET | `/product?id=tenis-runner` | header `warehouse` | dados da PDP com preço do warehouse |
-
 | GET | `/basket` | headers `authorization`, `warehouse` | itens, `subtotal` |
 | POST | `/add-item` | `{ productId, quantity? }` + headers | cesta atualizada |
 | POST | `/delete-item` | `{ productId }` + headers | cesta atualizada |
@@ -22,3 +21,9 @@ Hono em `http://localhost:3333` (`PORT`, `JWT_SECRET` via env). Preços em centa
 Sem header `warehouse` usa `br-01`; warehouse desconhecido → 400.
 Rotas de cesta exigem `authorization: Bearer <accessToken>` (guest ou logado); máx. 99 unidades por item.
 Usuário de teste: veja `apps/server/src/data.ts`.
+
+## apps/web
+
+Next.js 16 em `http://localhost:3000` (`API_URL`, padrão `http://localhost:3333`), UI com [ui-sdk](https://ui-sdk.dev).
+Server Components buscam na API com os cookies da sessão (httpOnly); `proxy.ts` cria a sessão guest e renova o access token.
+Páginas: `/` (CMS home), `/page?cid=`, `/product?id=`, `/basket`, `/login`; CEP no header.
