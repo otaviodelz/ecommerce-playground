@@ -1,4 +1,5 @@
 import { Hono, type Context } from 'hono'
+import { cors } from 'hono/cors'
 import { randomUUID } from 'node:crypto'
 import { checkPassword, issueTokens, verifyToken } from './auth.js'
 import {
@@ -6,11 +7,26 @@ import {
   type Product,
 } from './data.js'
 
-export const app = new Hono()
+export const app = new Hono<{ Variables: { customerId: string } }>()
+
+// The storefront's browser calls the API directly, with the access token it keeps in memory.
+app.use(cors({ origin: process.env.WEB_ORIGIN ?? 'http://localhost:3000', allowHeaders: ['authorization', 'content-type', 'warehouse'] }))
 
 // Simulated network latency to exercise the storefront's loading states; API_DELAY_MS=0 turns it off.
 app.use(async (_, next) => {
   await new Promise((resolve) => setTimeout(resolve, Number(process.env.API_DELAY_MS ?? 300)))
+  await next()
+})
+
+// Every route needs an access token (guest or logged in), except signing in and the placeholder images (<img> can't send headers).
+const PUBLIC_ROUTES = new Set(['/guest-login', '/login', '/refresh-token'])
+
+app.use(async (c, next) => {
+  if (PUBLIC_ROUTES.has(c.req.path) || c.req.path.startsWith('/images/')) return next()
+  const token = c.req.header('authorization')?.replace(/^Bearer /i, '')
+  const customerId = token ? (await verifyToken(token, 'access'))?.customerId : undefined
+  if (!customerId) return c.json({ error: 'unauthorized' }, 401)
+  c.set('customerId', customerId)
   await next()
 })
 
@@ -32,11 +48,6 @@ const available = (p: Product, warehouse: string | undefined) =>
   warehouse ? inStock(p, warehouse) : Object.keys(warehouses).some((w) => inStock(p, w))
 
 const card = (p: Product) => ({ id: p.id, name: p.name, brand: p.brand, image: p.images[0] })
-
-async function customerOf(c: Context) {
-  const token = c.req.header('authorization')?.replace(/^Bearer /i, '')
-  return token ? (await verifyToken(token, 'access'))?.customerId : undefined
-}
 
 function basketView(customerId: string, warehouse: string) {
   const items = [...(baskets.get(customerId) ?? [])].map(([id, quantity]) => {
@@ -165,18 +176,16 @@ app.get('/prices', (c) => {
   return c.json({ warehouse, prices })
 })
 
-// Basket routes need an access token (guest or logged in) and price items by the warehouse header.
+// Basket routes are per customer (from the access token) and price items by the warehouse header.
 app.get('/basket', async (c) => {
-  const customerId = await customerOf(c)
-  if (!customerId) return c.json({ error: 'unauthorized' }, 401)
+  const customerId = c.get('customerId')
   const warehouse = warehouseOf(c)
   if (!warehouse) return c.json({ error: 'unknown warehouse' }, 400)
   return c.json(basketView(customerId, warehouse))
 })
 
 app.post('/add-item', async (c) => {
-  const customerId = await customerOf(c)
-  if (!customerId) return c.json({ error: 'unauthorized' }, 401)
+  const customerId = c.get('customerId')
   const warehouse = warehouseOf(c)
   if (!warehouse) return c.json({ error: 'unknown warehouse' }, 400)
   const { productId, quantity = 1 } = await body(c)
@@ -201,8 +210,7 @@ app.post('/add-item', async (c) => {
 })
 
 app.post('/delete-item', async (c) => {
-  const customerId = await customerOf(c)
-  if (!customerId) return c.json({ error: 'unauthorized' }, 401)
+  const customerId = c.get('customerId')
   const warehouse = warehouseOf(c)
   if (!warehouse) return c.json({ error: 'unknown warehouse' }, 400)
   const { productId } = await body(c)
@@ -211,18 +219,13 @@ app.post('/delete-item', async (c) => {
   return c.json(basketView(customerId, warehouse))
 })
 
-// Favorites need an access token like the basket, but are content only: the storefront prices them with /prices.
+// Favorites are per customer like the basket, but content only: the storefront prices them with /prices.
 const favoritesView = (customerId: string) => ({ customerId, products: [...(favorites.get(customerId) ?? [])].map((id) => card(products[id])) })
 
-app.get('/favorites', async (c) => {
-  const customerId = await customerOf(c)
-  if (!customerId) return c.json({ error: 'unauthorized' }, 401)
-  return c.json(favoritesView(customerId))
-})
+app.get('/favorites', (c) => c.json(favoritesView(c.get('customerId'))))
 
 app.post('/add-favorite', async (c) => {
-  const customerId = await customerOf(c)
-  if (!customerId) return c.json({ error: 'unauthorized' }, 401)
+  const customerId = c.get('customerId')
   const { productId } = await body(c)
   if (typeof productId !== 'string' || !Object.hasOwn(products, productId)) {
     return c.json({ error: 'product not found' }, 404)
@@ -232,8 +235,7 @@ app.post('/add-favorite', async (c) => {
 })
 
 app.post('/delete-favorite', async (c) => {
-  const customerId = await customerOf(c)
-  if (!customerId) return c.json({ error: 'unauthorized' }, 401)
+  const customerId = c.get('customerId')
   const { productId } = await body(c)
   if (typeof productId !== 'string') return c.json({ error: 'productId is required' }, 400)
   favorites.get(customerId)?.delete(productId)

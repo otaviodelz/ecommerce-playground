@@ -2,6 +2,7 @@
 
 import { Toggle, ToggleIcon } from "@ui-sdk/react/toggle"
 import { useOptimistic, useTransition } from "react"
+import { useFavorites, useStoreActions } from "@/lib/client/queries"
 
 type SetFavorite = (productId: string, favorite: boolean) => Promise<{ error?: string }>
 
@@ -31,4 +32,12 @@ function FavoriteToggle({ productId, name, favorited, action }: { productId: str
   )
 }
 
-export { FavoriteToggle }
+// The visitor's favorites load once in the browser and every card's heart reads them; disabled until they arrive.
+function Favorite({ productId, name }: { productId: string; name: string }) {
+  const favorites = useFavorites()
+  const { setFavorite } = useStoreActions()
+  const favorited = favorites.data?.products.some((p) => p.id === productId) ?? false
+  return <FavoriteToggle productId={productId} name={name} favorited={favorited} action={favorites.isSuccess ? setFavorite : undefined} />
+}
+
+export { Favorite, FavoriteToggle }

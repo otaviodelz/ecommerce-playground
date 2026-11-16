@@ -1,6 +1,8 @@
-import { Suspense } from "react"
-import { brl, discountPercent, getPrice, installments, type PriceInfo } from "@/lib/api"
-import { addItem, setLocation } from "@/lib/actions"
+"use client"
+
+import type { PriceInfo } from "@/lib/api"
+import { usePrices, useStoreActions } from "@/lib/client/queries"
+import { brl, discountPercent, installments } from "@/lib/format"
 import { AddToBasket } from "./add-to-basket"
 
 function Prices({ price, listPrice }: PriceInfo) {
@@ -29,8 +31,24 @@ function Prices({ price, listPrice }: PriceInfo) {
 
 type OfferProps = { product: { id: string; name: string }; ids?: string; label?: string }
 
-async function WarehouseOffer({ product, ids, label }: Required<OfferProps>) {
-  const offer = await getPrice(product.id, ids)
+// Price, stock and the add button depend on the visitor's warehouse, so they load in the browser;
+// the skeleton keeps their size so the layout doesn't shift.
+function Offer({ product, ids = product.id, label = "Adicionar" }: OfferProps) {
+  const prices = usePrices(ids)
+  const { addItem, setLocation } = useStoreActions()
+
+  if (prices.isPending) {
+    return (
+      <>
+        <p className="prices price-skeleton">
+          <span className="sr-only">Carregando preço</span>
+        </p>
+        <AddToBasket productId={product.id} name={product.name} label={label} available />
+      </>
+    )
+  }
+
+  const offer = prices.data?.[product.id]
   // Pricing outage: keep the button, add-item's own stock check decides.
   const available = offer?.available ?? true
   return (
@@ -47,22 +65,4 @@ async function WarehouseOffer({ product, ids, label }: Required<OfferProps>) {
   )
 }
 
-// Price, stock and the add button depend on the visitor's warehouse; the skeleton keeps their size so the layout doesn't shift.
-function Offer({ product, ids = product.id, label = "Adicionar" }: OfferProps) {
-  return (
-    <Suspense
-      fallback={
-        <>
-          <p className="prices price-skeleton">
-            <span className="sr-only">Carregando preço</span>
-          </p>
-          <AddToBasket productId={product.id} name={product.name} label={label} available />
-        </>
-      }
-    >
-      <WarehouseOffer product={product} ids={ids} label={label} />
-    </Suspense>
-  )
-}
-
-export { Offer, Prices }
+export { Offer }

@@ -3,8 +3,9 @@
 import { Button } from "@ui-sdk/react/button"
 import { Dialog, DialogBackdrop, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@ui-sdk/react/dialog"
 import { useState, useTransition } from "react"
-import type { AddItem, FormAction } from "@/lib/actions"
-import { CepForm } from "../forms"
+import { CepForm, type FormAction } from "../forms"
+
+export type AddItem = (productId: string) => Promise<{ error?: string; locationRequired?: boolean }>
 
 type Props = { productId: string; name: string; label: string; available: boolean; add?: AddItem; setLocation?: FormAction }
 

@@ -4,8 +4,12 @@ import { Button } from "@ui-sdk/react/button"
 import { Field, FieldError, FieldLabel } from "@ui-sdk/react/field"
 import { Input } from "@ui-sdk/react/input"
 import { PasswordInput, PasswordInputControl, PasswordInputToggle } from "@ui-sdk/react/password-input"
+import { useQueryClient } from "@tanstack/react-query"
+import { useRouter } from "next/navigation"
 import { useState, useTransition, type FormEvent } from "react"
-import type { FormAction } from "@/lib/actions"
+import { signIn } from "@/lib/client/session"
+
+export type FormAction = (form: FormData) => Promise<{ error?: string }>
 
 // onSubmit instead of <form action>: React resets the form after an action, wiping the typed values and the error.
 function useFormAction(action: FormAction, onSuccess?: () => void) {
@@ -23,8 +27,8 @@ function useFormAction(action: FormAction, onSuccess?: () => void) {
   return { error, clear: () => setError(""), onSubmit, pending }
 }
 
-function LoginForm({ action }: { action: FormAction }) {
-  const { error, clear, onSubmit, pending } = useFormAction(action)
+function LoginForm({ action, onSuccess }: { action: FormAction; onSuccess?: () => void }) {
+  const { error, clear, onSubmit, pending } = useFormAction(action, onSuccess)
   return (
     <form onSubmit={onSubmit} className="stack">
       <Field name="email">
@@ -64,4 +68,19 @@ function CepForm({ action, defaultCep, onSuccess }: { action: FormAction; defaul
   )
 }
 
-export { CepForm, LoginForm }
+// Signing in swaps the in-memory token, so every cached query (basket, favorites, name) refetches as the new customer.
+function SignIn() {
+  const router = useRouter()
+  const queryClient = useQueryClient()
+  return (
+    <LoginForm
+      action={signIn}
+      onSuccess={() => {
+        queryClient.invalidateQueries()
+        router.push("/")
+      }}
+    />
+  )
+}
+
+export { CepForm, LoginForm, SignIn }
