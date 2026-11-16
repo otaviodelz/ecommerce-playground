@@ -49,7 +49,8 @@ Next.js 16 em `http://localhost:3000` (`API_URL`, padrão `http://localhost:3333
 - Conteúdo do CMS e da PDP fica em cache (`"use cache"`, tag = path da API); a home sai no HTML estático.
   ISR com Cache Components: o build gera todas as categorias (`/c/[id]`) e um produto (`tenis-runner`, o mínimo exigido).
   Os outros produtos recebem o fallback só na primeira visita; o Next gera a página em segundo plano e serve completa daí em diante.
-  Links para categoria e produto usam `prefetch` completo, senão a navegação busca só a casca e mostra o fallback.
+  Links para categoria usam `prefetch` completo, senão a navegação busca só a casca e mostra o fallback.
+  Links para produto usam o prefetch padrão (só a casca), para não gerar uma requisição ao servidor por card visível; ao abrir um produto aparece o fallback até a página chegar.
   Links antigos `/product?id=x` redirecionam (308) para `/product/x`.
   Só preço, estoque e botão são por visitante: `<Offer>` em um `<Suspense>` pequeno, um lote de `/prices` por página, cache de minutos por warehouse.
   Sem estoque o botão vira "Indisponível"; sem CEP e com o produto faltando em alguma região, "Adicionar" abre um modal de CEP e adiciona em seguida.

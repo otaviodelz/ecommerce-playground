@@ -14,8 +14,7 @@ async function Favorite({ product }: { product: Card }) {
 function ProductCard({ product, ids }: { product: Card; ids: string }) {
   return (
     <article className="card">
-      {/* Full prefetch: the default one fetches only the shared shell, so navigating would still show the fallback. */}
-      <Link href={`/product/${product.id}`} prefetch>
+      <Link href={`/product/${product.id}`}>
         <img src={product.image} alt="" width={300} height={300} />
         <div className="card-body">
           <h3>{product.name}</h3>
