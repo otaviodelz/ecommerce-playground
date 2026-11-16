@@ -9,7 +9,6 @@ async function CategoryListing({ params }: Pick<PageProps<"/c/[id]">, "params">)
   const res = await getContent<Category>(`/category?id=${encodeURIComponent(id)}`)
   if (res.status === 404) notFound()
   const { name, description, parent, products } = res.data
-  const ids = products.map((p) => p.id).join(",")
 
   return (
     <>
@@ -28,7 +27,7 @@ async function CategoryListing({ params }: Pick<PageProps<"/c/[id]">, "params">)
       <ul className="grid">
         {products.map((product) => (
           <li key={product.id}>
-            <ProductCard product={product} ids={ids} />
+            <ProductCard product={product} />
           </li>
         ))}
       </ul>

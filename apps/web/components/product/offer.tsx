@@ -1,7 +1,8 @@
 "use client"
 
 import type { PriceInfo } from "@/lib/api"
-import { usePrices, useStoreActions } from "@/lib/client/queries"
+import { usePrice, useStoreActions } from "@/lib/client/queries"
+import { useInView } from "@/lib/client/use-in-view"
 import { brl, discountPercent, installments } from "@/lib/format"
 import { AddToBasket } from "./add-to-basket"
 
@@ -29,30 +30,31 @@ function Prices({ price, listPrice }: PriceInfo) {
   )
 }
 
-type OfferProps = { product: { id: string; name: string }; ids?: string; label?: string }
+type OfferProps = { product: { id: string; name: string }; label?: string; className?: string }
 
-// Price, stock and the add button depend on the visitor's warehouse, so they load in the browser;
-// the skeleton keeps their size so the layout doesn't shift.
-function Offer({ product, ids = product.id, label = "Adicionar" }: OfferProps) {
-  const prices = usePrices(ids)
+// Price, stock and the add button depend on the visitor's warehouse, so they load in the browser, starting 200px
+// before the offer reaches the viewport so scrolling rarely catches the skeleton; it keeps their size so the layout doesn't shift.
+function Offer({ product, label = "Adicionar", className }: OfferProps) {
+  const [ref, inView] = useInView<HTMLDivElement>("200px")
+  const price = usePrice(product.id, inView)
   const { addItem, setLocation } = useStoreActions()
 
-  if (prices.isPending) {
+  if (price.isPending) {
     return (
-      <>
+      <div ref={ref} className={className}>
         <p className="prices price-skeleton">
           <span className="sr-only">Carregando preço</span>
         </p>
         <AddToBasket productId={product.id} name={product.name} label={label} available />
-      </>
+      </div>
     )
   }
 
-  const offer = prices.data?.[product.id]
+  const offer = price.data
   // Pricing outage: keep the button, add-item's own stock check decides.
   const available = offer?.available ?? true
   return (
-    <>
+    <div ref={ref} className={className}>
       {!offer ? (
         <p className="prices muted">Preço indisponível</p>
       ) : available ? (
@@ -61,7 +63,7 @@ function Offer({ product, ids = product.id, label = "Adicionar" }: OfferProps) {
         <p className="prices out-of-stock">Sem estoque</p>
       )}
       <AddToBasket productId={product.id} name={product.name} label={label} available={available} add={addItem} setLocation={setLocation} />
-    </>
+    </div>
   )
 }
 

@@ -13,7 +13,6 @@ function SearchResults() {
   if (search.isPending) return <p className="muted">Buscando…</p>
   if (search.isError) return <p role="alert" className="error">Erro na busca.</p>
   const { products } = search.data
-  const ids = products.map((p) => p.id).join(",")
 
   return (
     <>
@@ -26,7 +25,7 @@ function SearchResults() {
         <ul className="grid">
           {products.map((product) => (
             <li key={product.id}>
-              <ProductCard product={product} ids={ids} />
+              <ProductCard product={product} />
             </li>
           ))}
         </ul>

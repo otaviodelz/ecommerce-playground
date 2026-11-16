@@ -4,7 +4,7 @@ import { getContent, type Block } from "@/lib/api"
 import { BannerCarousel } from "./banner-carousel"
 import { Shelf } from "./shelf"
 
-function CmsBlock({ block, ids }: { block: Block; ids: string }) {
+function CmsBlock({ block }: { block: Block }) {
   switch (block.type) {
     case "hero":
       return (
@@ -27,7 +27,7 @@ function CmsBlock({ block, ids }: { block: Block; ids: string }) {
     case "banner":
       return <BannerCarousel slides={block.slides} />
     case "shelf":
-      return <Shelf block={block} ids={ids} />
+      return <Shelf block={block} />
     case "info-bar":
       return <p className="info-bar">{block.link ? <Link href={block.link} prefetch>{block.text}</Link> : block.text}</p>
     case "categories":
@@ -67,10 +67,7 @@ function CmsBlock({ block, ids }: { block: Block; ids: string }) {
 async function CmsBlocks({ cid }: { cid: string }) {
   const res = await getContent<{ blocks: Block[] }>(`/page?cid=${encodeURIComponent(cid)}`)
   if (res.status === 404) notFound()
-  const { blocks } = res.data
-  const ids = [...new Set(blocks.flatMap((b) => (b.type === "shelf" ? b.products.map((p) => p.id) : [])))].join(",")
-
-  return blocks.map((block) => <CmsBlock key={block.id} block={block} ids={ids} />)
+  return res.data.blocks.map((block) => <CmsBlock key={block.id} block={block} />)
 }
 
 export { CmsBlocks }

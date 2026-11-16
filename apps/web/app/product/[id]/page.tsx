@@ -19,9 +19,7 @@ async function ProductDetail({ params }: Pick<PageProps<"/product/[id]">, "param
           <Link href={`/c/${product.subcategory.id}`} prefetch>{product.subcategory.name}</Link> › {product.brand}
         </nav>
         <h1>{product.name}</h1>
-        <div className="offer">
-          <Offer product={product} label="Adicionar à cesta" />
-        </div>
+        <Offer product={product} label="Adicionar à cesta" className="offer" />
         <p className="muted">{product.description}</p>
         <dl className="specs">
           {Object.entries(product.specs).map(([key, value]) => (

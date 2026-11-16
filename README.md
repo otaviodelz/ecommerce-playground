@@ -61,7 +61,7 @@ Next.js 16 em `http://localhost:3000` (`API_URL` para o servidor e `NEXT_PUBLIC_
   Links para categoria usam `prefetch` completo, senão a navegação busca só a casca e mostra o fallback.
   Links para produto usam o prefetch padrão (só a casca), para não gerar uma requisição ao servidor por card visível; ao abrir um produto aparece o fallback até a página chegar.
   Links antigos `/product?id=x` redirecionam (308) para `/product/x`.
-  Preço, estoque e botão carregam no browser: todos os `<Offer>` de uma página compartilham uma query, um lote de `/prices` por página e warehouse.
+  Preço, estoque e botão carregam no browser: cada `<Offer>` faz sua própria query (`/prices?ids=<id>`) por produto e warehouse, só quando entra no viewport (slides escondidos do carrossel contam como fora); o mesmo produto em duas vitrines divide a query.
   Sem estoque o botão vira "Indisponível"; sem CEP e com o produto faltando em alguma região, "Adicionar" abre um modal de CEP e adiciona em seguida.
 - Revalidação: `POST /api/revalidate` com header `x-revalidate-secret: $REVALIDATE_SECRET` e `{ "tag": "/page?cid=home" }` (ou `/product?id=…`, `/category?id=…`, `/categories`).
   Preços não passam mais pelo cache do Next: o react-query os mantém por 30s no browser.

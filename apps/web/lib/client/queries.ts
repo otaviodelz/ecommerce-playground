@@ -17,13 +17,13 @@ function useWarehouse() {
 
 export const useAccountName = () => useQuery({ queryKey: ["session"], queryFn: async () => (await getSession()).name })
 
-// Every Offer on a page passes the page's full id list, so they share one query: one /prices call per page and warehouse.
-export function usePrices(ids: string) {
+// One request per product and warehouse, sent only once `visible`; the same product twice on a page (two shelves) shares the query.
+export function usePrice(id: string, visible: boolean) {
   const { ready, warehouse } = useWarehouse()
   return useQuery({
-    queryKey: ["prices", ids, warehouse],
-    queryFn: async () => (await load<{ prices: Record<string, Offer> }>(`/prices?ids=${encodeURIComponent(ids)}`, warehouse)).prices,
-    enabled: ready && ids !== "",
+    queryKey: ["price", id, warehouse],
+    queryFn: async () => (await load<{ prices: Record<string, Offer> }>(`/prices?ids=${encodeURIComponent(id)}`, warehouse)).prices[id] ?? null,
+    enabled: ready && visible,
   })
 }
 

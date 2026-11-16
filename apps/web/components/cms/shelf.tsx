@@ -2,7 +2,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import type { Block } from "@/lib/api"
 import { ProductCard } from "../product/product-card"
 
-function Shelf({ block, ids }: { block: Extract<Block, { type: "shelf" }>; ids: string }) {
+function Shelf({ block }: { block: Extract<Block, { type: "shelf" }> }) {
   return (
     <Carousel aria-label={block.title} slidesPerPage="auto" className="shelf" render={<section />}>
       <h2>{block.title}</h2>
@@ -12,7 +12,7 @@ function Shelf({ block, ids }: { block: Extract<Block, { type: "shelf" }>; ids: 
         <CarouselContent>
           {block.products.map((product) => (
             <CarouselItem key={product.id} aria-label={product.name}>
-              <ProductCard product={product} ids={ids} />
+              <ProductCard product={product} />
             </CarouselItem>
           ))}
         </CarouselContent>

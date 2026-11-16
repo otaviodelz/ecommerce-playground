@@ -4,7 +4,7 @@ import { Favorite } from "./favorite-toggle"
 import { Offer } from "./offer"
 
 // Content (name, image, link) is static; the heart and the offer are per visitor and load in the browser.
-function ProductCard({ product, ids }: { product: Card; ids: string }) {
+function ProductCard({ product }: { product: Card }) {
   return (
     <article className="card">
       <Link href={`/product/${product.id}`}>
@@ -15,9 +15,7 @@ function ProductCard({ product, ids }: { product: Card; ids: string }) {
         </div>
       </Link>
       <Favorite productId={product.id} name={product.name} />
-      <div className="card-offer">
-        <Offer product={product} ids={ids} />
-      </div>
+      <Offer product={product} className="card-offer" />
     </article>
   )
 }
