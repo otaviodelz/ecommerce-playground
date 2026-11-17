@@ -100,9 +100,41 @@ export async function generateStaticParams() {
   return [{ id: "tenis-runner" }]
 }
 
+// Same layout as ProductDetail (image, breadcrumb, title, offer, description, specs), so nothing jumps when it arrives.
+function ProductSkeleton() {
+  return (
+    <article className="product" aria-busy="true">
+      <p className="sr-only" role="status">
+        Carregando produto
+      </p>
+      <span className="skeleton product-skeleton-image" />
+      <div className="stack" aria-hidden="true">
+        <span className="skeleton" style={{ width: "14rem", height: "0.75rem" }} />
+        <span className="skeleton" style={{ width: "75%", height: "2.1rem" }} />
+        <div className="offer">
+          <span className="skeleton" style={{ width: "8rem", height: "2.6rem", marginTop: "0.4rem" }} />
+          <span className="skeleton" style={{ width: "10rem", height: "2.25rem" }} />
+        </div>
+        <div className="skeleton-lines">
+          <span className="skeleton" style={{ width: "100%" }} />
+          <span className="skeleton" style={{ width: "85%" }} />
+        </div>
+        <dl className="specs">
+          {[0, 1, 2].map((row) => (
+            <div key={row}>
+              <span className="skeleton" style={{ width: "5rem" }} />
+              <span className="skeleton" style={{ width: "7rem" }} />
+            </div>
+          ))}
+        </dl>
+      </div>
+    </article>
+  )
+}
+
 export default function ProductPage({ params }: PageProps<"/product/[id]">) {
   return (
-    <Suspense fallback={<p>Carregando…</p>}>
+    <Suspense fallback={<ProductSkeleton />}>
       <ProductDetail params={params} />
     </Suspense>
   )

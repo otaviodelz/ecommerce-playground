@@ -832,6 +832,38 @@ p {
   background: var(--surface-2);
 }
 
+/* Skeletons: blocks the size of what's loading; text-height by default */
+.skeleton {
+  display: block;
+  height: 0.875rem;
+  background: var(--surface-2);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton,
+  .price-skeleton {
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.skeleton-lines {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.product-skeleton-image {
+  aspect-ratio: 1;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--line);
+}
+
 /* Bordered cell grids (categories, benefits) */
 .cells {
   display: grid;
