@@ -30,13 +30,14 @@ function Prices({ price, listPrice }: PriceInfo) {
   )
 }
 
-type OfferProps = { product: { id: string; name: string }; label?: string; className?: string }
+type OfferProps = { product: { id: string; name: string }; label?: string; className?: string; eager?: boolean }
 
 // Price, stock and the add button depend on the visitor's warehouse, so they load in the browser, starting 200px
 // before the offer reaches the viewport so scrolling rarely catches the skeleton; it keeps their size so the layout doesn't shift.
-function Offer({ product, label = "Adicionar", className }: OfferProps) {
+// `eager` skips that wait, for an offer that is always on screen.
+function Offer({ product, label = "Adicionar", className, eager = false }: OfferProps) {
   const [ref, inView] = useInView<HTMLDivElement>("200px")
-  const price = usePrice(product.id, inView)
+  const price = usePrice(product.id, eager || inView)
   const { addItem, setLocation } = useStoreActions()
 
   if (price.isPending) {

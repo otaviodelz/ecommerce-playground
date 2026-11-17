@@ -109,10 +109,16 @@ app.get('/page', (c) => {
   const cid = c.req.query('cid') ?? ''
   if (!Object.hasOwn(pages, cid)) return c.json({ error: 'page not found' }, 404)
 
+  const cards = (ids: string[]) => ids.map((id) => card(products[id]))
   const blocks = pages[cid].map((block) => {
-    if (block.type !== 'shelf') return block
-    const { productIds, ...shelf } = block
-    return { ...shelf, products: productIds.map((id) => card(products[id])) }
+    if (block.type === 'shelf') {
+      const { productIds, ...shelf } = block
+      return { ...shelf, products: cards(productIds) }
+    }
+    if (block.type === 'tabbed-shelf') {
+      return { ...block, tabs: block.tabs.map(({ productIds, ...tab }) => ({ ...tab, products: cards(productIds) })) }
+    }
+    return block
   })
   return c.json({ cid, blocks })
 })

@@ -1,7 +1,9 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Suspense } from "react"
 import { getContent, type Category, type MenuCategory } from "@/lib/api"
+import { openGraphBase } from "@/lib/config"
 import { ProductCard } from "@/components/product/product-card"
 
 async function CategoryListing({ params }: Pick<PageProps<"/c/[id]">, "params">) {
@@ -33,6 +35,20 @@ async function CategoryListing({ params }: Pick<PageProps<"/c/[id]">, "params">)
       </ul>
     </>
   )
+}
+
+export async function generateMetadata({ params }: PageProps<"/c/[id]">): Promise<Metadata> {
+  const { id } = await params
+  const res = await getContent<Category>(`/category?id=${encodeURIComponent(id)}`)
+  if (res.status === 404) return {} // the page itself answers with notFound()
+  const { name, description, parent } = res.data
+  const path = `/c/${id}`
+  return {
+    title: parent ? `${name} em ${parent.name}` : name,
+    description,
+    alternates: { canonical: path },
+    openGraph: { ...openGraphBase, title: name, description, url: path },
+  }
 }
 
 // Every category and subcategory is built (there are few); one added later works like an unlisted product:

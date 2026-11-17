@@ -14,7 +14,7 @@ CORS liberado para `WEB_ORIGIN` (padrão `http://localhost:3000`), porque o brow
 | POST | `/login` | `{ email, password }` | tokens, `customerId`, `name`, `email` |
 | POST | `/refresh-token` | `{ refreshToken }` | novos `accessToken`, `refreshToken`, `customerId` |
 | POST | `/set-location` | `{ cep }` | `{ warehouse }` |
-| GET | `/page?cid=home` | — | blocos CMS (`info-bar`, `hero`, `banner`, `categories`, `shelf`, `benefits`), sem preço |
+| GET | `/page?cid=home` | — | blocos CMS (`info-bar`, `hero`, `banner`, `cards`, `shortcuts`, `callout`, `categories`, `shelf`, `tabbed-shelf`, `benefits`), sem preço |
 | GET | `/categories` | — | árvore do menu: categorias com `subcategories` |
 | GET | `/category?id=corrida` | — | categoria ou subcategoria (`name`, `description`, `parent?`) e seus produtos, sem preço |
 | GET | `/search?q=tenis` | — | produtos que batem com nome, marca ou descrição (sem acento/caixa), sem preço |
@@ -29,7 +29,8 @@ CORS liberado para `WEB_ORIGIN` (padrão `http://localhost:3000`), porque o brow
 | GET | `/images/<slug>.svg?w=&h=` | — | placeholder SVG |
 
 Conteúdo (`/page`, `/product`) é igual para todos; preço vem de `/prices` pelo warehouse.
-Páginas CMS: `home`, `novidades`, `ofertas`. Categorias: `corrida`, `acessorios`, `eletronicos`, cada uma com subcategorias (ex. `tenis`, `roupas`, `meias`); cada produto tem uma categoria e uma subcategoria. Banner com mais de um slide e vitrines viram carrossel no web.
+Páginas CMS: `home`, `novidades`, `ofertas`. Categorias: `corrida`, `acessorios`, `eletronicos`, cada uma com subcategorias (ex. `tenis`, `roupas`, `meias`); cada produto tem uma categoria e uma subcategoria. Banner com mais de um slide, vitrines e fileiras de cards viram carrossel no web; `tabbed-shelf` é um banner ao lado de uma vitrine com abas.
+A home segue o ritmo de blocos de um grande varejista: hero, cards de oferta, atalhos, aviso, categorias e vitrines alternadas com fileiras de cards (13 blocos).
 Sem header `warehouse` usa `br-01`; warehouse desconhecido → 400.
 Cesta e favoritos são do cliente dono do token; máx. 99 unidades por item.
 Estoque por warehouse (`outOfStockIn` em `data.ts`): `available` é o estoque no warehouse do header ou, sem header, em pelo menos um.
@@ -38,7 +39,7 @@ Usuário de teste: veja `apps/server/src/data.ts`.
 
 ## apps/web
 
-Next.js 16 em `http://localhost:3000` (`API_URL` para o servidor e `NEXT_PUBLIC_API_URL` para o browser, padrão `http://localhost:3333`), UI com [ui-sdk](https://ui-sdk.dev).
+Next.js 16 em `http://localhost:3000` (`API_URL` para o servidor e `NEXT_PUBLIC_API_URL` para o browser, padrão `http://localhost:3333`; `SITE_URL` é o endereço público, usado em canonical, Open Graph e JSON-LD), UI com [ui-sdk](https://ui-sdk.dev).
 
 - Pastas: `app/` só rotas; `components/` (`layout/` header e barra de categorias, `product/` card, oferta, cesta, favorito e listas, `cms/` blocos, vitrine e banner, `forms.tsx`, `basket-items.tsx`, `providers.tsx`); `lib/` (`api.ts` conteúdo no servidor, `client/` sessão, API, localização e queries no browser, `format.ts`, `token.ts`, `config.ts`). Testes ficam ao lado do código.
 - Dois caminhos de dados:
@@ -63,6 +64,10 @@ Next.js 16 em `http://localhost:3000` (`API_URL` para o servidor e `NEXT_PUBLIC_
   Links antigos `/product?id=x` redirecionam (308) para `/product/x`.
   Preço, estoque e botão carregam no browser: cada `<Offer>` faz sua própria query (`/prices?ids=<id>`) por produto e warehouse, só quando entra no viewport (slides escondidos do carrossel contam como fora); o mesmo produto em duas vitrines divide a query.
   Sem estoque o botão vira "Indisponível"; sem CEP e com o produto faltando em alguma região, "Adicionar" abre um modal de CEP e adiciona em seguida.
-- Revalidação: `POST /api/revalidate` com header `x-revalidate-secret: $REVALIDATE_SECRET` e `{ "tag": "/page?cid=home" }` (ou `/product?id=…`, `/category?id=…`, `/categories`).
-  Preços não passam mais pelo cache do Next: o react-query os mantém por 30s no browser.
+- SEO: PDP e categoria têm título, descrição, canonical e Open Graph próprios (`generateMetadata`).
+  A PDP leva no HTML um JSON-LD `Product` + `Offer` e as tags `og:type=product` / `product:price:*` com o preço de quem não informou CEP (warehouse padrão), o mesmo que um crawler vê.
+  Esse preço fica em cache de minutos no servidor, então a PDP revalida a cada minuto; o preço visível continua vindo do browser, pelo CEP do visitante, e na PDP é buscado sem esperar o viewport.
+- Revalidação: `POST /api/revalidate` com header `x-revalidate-secret: $REVALIDATE_SECRET` e `{ "tag": "/page?cid=home" }` (ou `/product?id=…`, `/category?id=…`, `/categories`, `/prices?ids=…` para o preço de um produto no HTML, `prices` para todos).
+  Os preços visíveis não passam pelo cache do Next: o react-query os mantém por 30s no browser.
 - **O build pré-gera a home, então precisa da API no ar** (`pnpm --filter server dev` antes de `pnpm build`).
+  O conteúdo buscado fica em `apps/web/.next/cache/fetch-cache` e o build seguinte reaproveita por até 1h: depois de mudar o conteúdo da API, apague essa pasta (ou chame o webhook de revalidação) antes de buildar.

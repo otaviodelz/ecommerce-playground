@@ -130,19 +130,33 @@ export const MAX_ITEM_QUANTITY = 99
 export const favorites = new Map<string, Set<string>>()
 
 type Slide = { image: string; link: string; alt: string }
+type Card = { title: string; text: string; label: string; link: string; image: string }
 
-// A banner with more than one slide is shown as a carousel; shelves always are.
+// A banner with more than one slide is shown as a carousel; shelves and card rows always are.
 export type Block =
   | { type: 'hero'; id: string; title: string; text: string; actions: { label: string; link: string }[]; slides: Slide[] }
   | { type: 'banner'; id: string; slides: Slide[] }
   | { type: 'shelf'; id: string; title: string; productIds: string[] }
+  | { type: 'tabbed-shelf'; id: string; title: string; banner: Slide; tabs: { label: string; productIds: string[] }[] }
+  | { type: 'cards'; id: string; title: string; items: Card[] }
+  | { type: 'shortcuts'; id: string; items: { label: string; link: string; icon: string }[] }
+  | { type: 'callout'; id: string; label: string; text: string; link?: string }
   | { type: 'info-bar'; id: string; text: string; link?: string }
   | { type: 'categories'; id: string; title: string; items: { label: string; description: string; link: string }[] }
   | { type: 'benefits'; id: string; items: { title: string; description: string }[] }
 
 const slide = (slug: string, link: string, alt: string, h = 400) => ({ image: `/images/${slug}.svg?w=1200&h=${h}`, link, alt })
 const shelf = (id: string, title: string, productIds: string[]): Block => ({ type: 'shelf', id, title, productIds })
+const card = (slug: string, title: string, text: string, label: string, link: string): Card =>
+  ({ title, text, label, link, image: `/images/${slug}.svg?w=480&h=640` })
+const shortcut = (slug: string, label: string, link: string) => ({ label, link, icon: `/images/${slug}.svg?w=144&h=144` })
+// Tall (1:2): it stands beside the tabbed shelf.
+const sideBanner = (slug: string, link: string, alt: string) => ({ image: `/images/${slug}.svg?w=600&h=1200`, link, alt })
+const inCategory = (id: string) => Object.values(products).filter((p) => p.category === id || p.subcategory === id).map((p) => p.id)
+const deals = () => Object.values(products).filter((p) => p.listPrice > p.basePrice).map((p) => p.id)
 
+// The home follows a large retailer's block rhythm: hero, promo cards, shortcuts, a callout, categories, then shelves
+// alternating with card rows.
 export const pages: Record<string, Block[]> = {
   home: [
     { type: 'info-bar', id: 'shipping', text: 'Frete grátis nas compras acima de R$ 199', link: '/c/corrida' },
@@ -155,27 +169,84 @@ export const pages: Record<string, Block[]> = {
         slide('hero-corrida', '/product/tenis-runner', 'Tênis Runner com até 25% off', 900),
         slide('hero-relogio', '/product/relogio-gps', 'Relógio GPS: treine com dados', 900),
         slide('hero-inverno', '/product/jaqueta-corta-vento', 'Coleção corta-vento', 900),
+        slide('hero-mochila', '/product/mochila-urban', 'Mochila Urban: notebook e treino na mesma bolsa', 900),
+        slide('hero-fone', '/product/fone-sport', 'Fone Sport: sem fio e à prova de suor', 900),
+        slide('hero-garrafa', '/product/garrafa-termica', 'Garrafa térmica: 12h na temperatura certa', 900),
+        slide('hero-novidades', '/novidades', 'Novidades da semana', 900),
+        slide('hero-ofertas', '/ofertas', 'Ofertas com até 25% off', 900),
       ],
     },
     {
-      type: 'categories', id: 'departments', title: 'Categorias', items: [
-        { label: 'Corrida', description: 'Tênis, bermudas e meias', link: '/c/corrida' },
-        { label: 'Acessórios', description: 'Mochilas, bonés e garrafas', link: '/c/acessorios' },
-        { label: 'Eletrônicos', description: 'Relógios e fones', link: '/c/eletronicos' },
-        { label: 'Ofertas', description: 'Até 25% off', link: '/ofertas' },
+      type: 'cards', id: 'flash-deals', title: 'Ofertas da semana', items: [
+        card('tenis-off', 'Tênis com até 25% off', 'Amortecimento leve para treino e prova.', 'Quero', '/c/tenis'),
+        card('roupas-off', 'Roupas com até 25% off', 'Secagem rápida para dias quentes.', 'Quero', '/c/roupas'),
+        card('relogio-off', 'Relógio GPS com 10% off', 'Pace, distância e frequência no pulso.', 'Quero', '/product/relogio-gps'),
+        card('acessorios', 'Acessórios em oferta', 'Mochilas, bonés e garrafas.', 'Quero', '/c/acessorios'),
+        card('meias-off', 'Meias de compressão', 'Kit com 3 pares.', 'Quero', '/product/meia-pro'),
+        card('ofertas', 'Todas as ofertas', 'Tudo com desconto em um só lugar.', 'Ver tudo', '/ofertas'),
       ],
     },
-    shelf('best-sellers', 'Mais vendidos', ['tenis-runner', 'camiseta-basic', 'mochila-urban', 'relogio-gps', 'bermuda-dry', 'fone-sport']),
     {
-      type: 'benefits', id: 'benefits', items: [
-        { title: 'Frete grátis', description: 'Acima de R$ 199 para todo o Brasil' },
-        { title: 'Troca fácil', description: '30 dias para trocar ou devolver' },
-        { title: 'Até 10x sem juros', description: 'No cartão de crédito' },
+      type: 'shortcuts', id: 'shortcuts', items: [
+        shortcut('ofertas', 'Ofertas', '/ofertas'),
+        shortcut('novidades', 'Novidades', '/novidades'),
+        shortcut('tenis', 'Tênis', '/c/tenis'),
+        shortcut('relogios', 'Relógios', '/c/relogios'),
+        shortcut('mochilas', 'Mochilas', '/c/mochilas'),
       ],
     },
-    { type: 'banner', id: 'promo', slides: [slide('promo', '/c/acessorios', 'Acessórios a partir de R$ 29,90', 300)] },
-    shelf('new', 'Novidades', ['jaqueta-corta-vento', 'garrafa-termica', 'bone-trail', 'meia-pro', 'mochila-urban']),
+    { type: 'callout', id: 'stock-by-cep', label: 'Estoque por CEP', text: 'Informe seu CEP no topo da página e veja o preço e o estoque da sua região.' },
+    {
+      type: 'categories', id: 'departments', title: 'Encontre a categoria certa para você',
+      items: Object.values(categories).map((c) => ({ label: c.name, description: c.description, link: `/c/${c.id}` })),
+    },
+    {
+      type: 'tabbed-shelf', id: 'highlights', title: 'Aproveite o melhor da playground',
+      banner: sideBanner('destaques', '/ofertas', 'Ofertas de corrida com até 25% off'),
+      tabs: [
+        { label: 'Mais vendidos', productIds: ['tenis-runner', 'camiseta-basic', 'mochila-urban', 'relogio-gps', 'bermuda-dry', 'fone-sport'] },
+        { label: 'Corrida', productIds: inCategory('corrida') },
+        { label: 'Acessórios', productIds: inCategory('acessorios') },
+      ],
+    },
+    shelf('best-sellers', 'Ofertas que você vai amar', deals()),
+    {
+      type: 'cards', id: 'launches', title: 'Lançamentos', items: [
+        card('novo-jaqueta', 'Jaqueta Corta-Vento', 'Leve, compacta e pronta para a chuva.', 'Conhecer', '/product/jaqueta-corta-vento'),
+        card('novo-garrafa', 'Garrafa Térmica', 'Água gelada do primeiro ao último km.', 'Conhecer', '/product/garrafa-termica'),
+        card('novo-relogio', 'Relógio GPS', 'Treinos guiados e bateria para a semana.', 'Conhecer', '/product/relogio-gps'),
+        card('novo-fone', 'Fone Sport', 'Encaixe firme para correr sem tirar.', 'Conhecer', '/product/fone-sport'),
+      ],
+    },
+    {
+      type: 'tabbed-shelf', id: 'favorites', title: 'Favoritos para o seu treino',
+      banner: sideBanner('favoritos', '/c/corrida', 'Tudo para correr'),
+      tabs: [
+        { label: 'Ofertas', productIds: deals() },
+        { label: 'Corrida', productIds: inCategory('corrida') },
+        { label: 'Acessórios', productIds: inCategory('acessorios') },
+        { label: 'Eletrônicos', productIds: inCategory('eletronicos') },
+      ],
+    },
+    {
+      type: 'cards', id: 'departments-editorial', title: 'Por categoria', items: [
+        card('cat-tenis', 'Tênis', 'Leves para treino e prova.', 'Comprar', '/c/tenis'),
+        card('cat-roupas', 'Roupas', 'Camisetas, bermudas e jaquetas.', 'Comprar', '/c/roupas'),
+        card('cat-mochilas', 'Mochilas', 'Para o dia a dia e o trabalho.', 'Comprar', '/c/mochilas'),
+        card('cat-garrafas', 'Garrafas', 'Térmicas e squeezes.', 'Comprar', '/c/garrafas'),
+        card('cat-relogios', 'Relógios', 'GPS e frequência cardíaca.', 'Comprar', '/c/relogios'),
+        card('cat-fones', 'Fones', 'Sem fio para treinar.', 'Comprar', '/c/fones'),
+      ],
+    },
+    shelf('accessories', 'Para completar o treino', ['meia-pro', 'bone-trail', 'garrafa-termica', 'camiseta-basic', 'bermuda-dry']),
+    {
+      type: 'cards', id: 'about', title: 'Comprar na playground', items: [
+        card('frete', 'Frete grátis', 'Acima de R$ 199 para todo o Brasil.', 'Ver produtos', '/c/corrida'),
+        card('troca', 'Troca fácil', '30 dias para trocar ou devolver.', 'Ver novidades', '/novidades'),
+        card('parcelas', 'Até 10x sem juros', 'No cartão de crédito, a partir de R$ 20.', 'Ver ofertas', '/ofertas'),
+      ],
+    },
   ],
   novidades: [shelf('new-arrivals', 'Novidades', ['jaqueta-corta-vento', 'garrafa-termica', 'bone-trail', 'meia-pro', 'mochila-urban'])],
-  ofertas: [shelf('deals', 'Ofertas', Object.values(products).filter((p) => p.listPrice > p.basePrice).map((p) => p.id))],
+  ofertas: [shelf('deals', 'Ofertas', deals())],
 }

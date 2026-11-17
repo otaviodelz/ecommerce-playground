@@ -1,17 +1,61 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Suspense } from "react"
-import { getContent, type Product } from "@/lib/api"
+import { getContent, getDefaultOffer, type Offer as OfferInfo, type Product } from "@/lib/api"
+import { openGraphBase, SITE_URL } from "@/lib/config"
 import { Offer } from "@/components/product/offer"
+
+const getProduct = (id: string) => getContent<Product>(`/product?id=${encodeURIComponent(id)}`)
+
+const amount = (cents: number) => (cents / 100).toFixed(2)
+
+// Structured data for rich results and Shopping, with the no-CEP offer: the same price a visitor without a CEP sees.
+function ProductJsonLd({ product, offer }: { product: Product; offer: OfferInfo | null }) {
+  const url = `${SITE_URL}/product/${product.id}`
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    sku: product.id,
+    name: product.name,
+    description: product.description,
+    brand: { "@type": "Brand", name: product.brand },
+    category: `${product.category.name} > ${product.subcategory.name}`,
+    image: product.images.map((image) => new URL(image, SITE_URL).href),
+    url,
+    ...(offer && {
+      offers: {
+        "@type": "Offer",
+        url,
+        priceCurrency: "BRL",
+        price: amount(offer.price),
+        availability: `https://schema.org/${offer.available ? "InStock" : "OutOfStock"}`,
+        itemCondition: "https://schema.org/NewCondition",
+      },
+    }),
+  }
+  // "<" escaped so text from the catalog can't close the script tag.
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
+}
 
 async function ProductDetail({ params }: Pick<PageProps<"/product/[id]">, "params">) {
   const { id } = await params
-  const res = await getContent<Product>(`/product?id=${encodeURIComponent(id)}`)
+  const [res, offer] = await Promise.all([getProduct(id), getDefaultOffer(id)])
   if (res.status === 404) notFound()
   const product = res.data
 
   return (
     <article className="product">
+      <ProductJsonLd product={product} offer={offer} />
+      {/* Open Graph product tags for link previews; React hoists these into <head>. */}
+      <meta property="og:type" content="product" />
+      {offer && (
+        <>
+          <meta property="product:price:amount" content={amount(offer.price)} />
+          <meta property="product:price:currency" content="BRL" />
+          <meta property="product:availability" content={offer.available ? "in stock" : "out of stock"} />
+        </>
+      )}
       <img src={product.images[0]} alt={product.name} width={600} height={600} />
       <div className="stack">
         <nav className="breadcrumb" aria-label="Você está em">
@@ -19,7 +63,8 @@ async function ProductDetail({ params }: Pick<PageProps<"/product/[id]">, "param
           <Link href={`/c/${product.subcategory.id}`} prefetch>{product.subcategory.name}</Link> › {product.brand}
         </nav>
         <h1>{product.name}</h1>
-        <Offer product={product} label="Adicionar à cesta" className="offer" />
+        {/* Always on screen at the top of the page, so it skips the viewport wait. */}
+        <Offer product={product} label="Adicionar à cesta" className="offer" eager />
         <p className="muted">{product.description}</p>
         <dl className="specs">
           {Object.entries(product.specs).map(([key, value]) => (
@@ -32,6 +77,20 @@ async function ProductDetail({ params }: Pick<PageProps<"/product/[id]">, "param
       </div>
     </article>
   )
+}
+
+export async function generateMetadata({ params }: PageProps<"/product/[id]">): Promise<Metadata> {
+  const { id } = await params
+  const res = await getProduct(id)
+  if (res.status === 404) return {} // the page itself answers with notFound()
+  const { name, brand, description, images } = res.data
+  const path = `/product/${id}`
+  return {
+    title: `${name} ${brand}`,
+    description,
+    alternates: { canonical: path },
+    openGraph: { ...openGraphBase, title: name, description, url: path, images: images.map((url) => ({ url, alt: name })) },
+  }
 }
 
 // ISR with Cache Components: one real product is built (Cache Components requires at least one, and rendering a real

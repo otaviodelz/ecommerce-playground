@@ -1,16 +1,17 @@
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, CarouselViewport } from "@ui-sdk/react/carousel"
-import type { Block } from "@/lib/api"
+import type { ProductCard as Card } from "@/lib/api"
 import { ProductCard } from "../product/product-card"
 
-function Shelf({ block }: { block: Extract<Block, { type: "shelf" }> }) {
+// `heading={false}` inside a tab panel, where the tab already names the shelf.
+function Shelf({ title, products, heading = true }: { title: string; products: Card[]; heading?: boolean }) {
   return (
-    <Carousel aria-label={block.title} slidesPerPage="auto" className="shelf" render={<section />}>
-      <h2>{block.title}</h2>
-      <CarouselPrevious aria-label={`Anteriores em ${block.title}`} />
-      <CarouselNext aria-label={`Próximos em ${block.title}`} />
+    <Carousel aria-label={title} slidesPerPage="auto" className="shelf" render={<section />}>
+      {heading && <h2>{title}</h2>}
+      <CarouselPrevious aria-label={`Anteriores em ${title}`} />
+      <CarouselNext aria-label={`Próximos em ${title}`} />
       <CarouselViewport>
         <CarouselContent>
-          {block.products.map((product) => (
+          {products.map((product) => (
             <CarouselItem key={product.id} aria-label={product.name}>
               <ProductCard product={product} />
             </CarouselItem>

@@ -4,10 +4,15 @@ import { expiresSoon, tokenExpiry } from "./token"
 
 export type ProductCard = { id: string; name: string; brand: string; image: string }
 export type BannerSlide = { image: string; link: string; alt: string }
+export type PromoCard = { title: string; text: string; label: string; link: string; image: string }
 export type Block =
   | { type: "hero"; id: string; title: string; text: string; actions: { label: string; link: string }[]; slides: BannerSlide[] }
   | { type: "banner"; id: string; slides: BannerSlide[] }
   | { type: "shelf"; id: string; title: string; products: ProductCard[] }
+  | { type: "tabbed-shelf"; id: string; title: string; banner: BannerSlide; tabs: { label: string; products: ProductCard[] }[] }
+  | { type: "cards"; id: string; title: string; items: PromoCard[] }
+  | { type: "shortcuts"; id: string; items: { label: string; link: string; icon: string }[] }
+  | { type: "callout"; id: string; label: string; text: string; link?: string }
   | { type: "info-bar"; id: string; text: string; link?: string }
   | { type: "categories"; id: string; title: string; items: { label: string; description: string; link: string }[] }
   | { type: "benefits"; id: string; items: { title: string; description: string }[] }
@@ -46,14 +51,35 @@ function serverToken(renew: boolean) {
   return serverSession.token
 }
 
+async function serverFetch(path: string) {
+  const request = async (renew: boolean) => fetch(API_URL + path, { headers: { authorization: `Bearer ${await serverToken(renew)}` } })
+  let res = await request(false)
+  if (res.status === 401) res = await request(true)
+  if (res.status >= 500 || res.status === 401) throw new Error(`API ${path} failed with ${res.status}`)
+  return res
+}
+
 // Same for every visitor, so it's cached and lands in the static HTML. Tagged by path for revalidation (app/api/revalidate).
 export async function getContent<T>(path: string) {
   "use cache"
   cacheTag(path)
   cacheLife("hours")
-  const request = async (renew: boolean) => fetch(API_URL + path, { headers: { authorization: `Bearer ${await serverToken(renew)}` } })
-  let res = await request(false)
-  if (res.status === 401) res = await request(true)
-  if (res.status >= 500 || res.status === 401) throw new Error(`API ${path} failed with ${res.status}`)
+  const res = await serverFetch(path)
   return { status: res.status, data: (await res.json()) as T }
+}
+
+// The offer a visitor without a CEP sees (default warehouse, stock in any warehouse): what crawlers and link previews
+// get in the PDP's HTML. Cached for minutes; tag "prices" refreshes every product at once. null on a pricing outage.
+export async function getDefaultOffer(id: string): Promise<Offer | null> {
+  "use cache"
+  const path = `/prices?ids=${encodeURIComponent(id)}`
+  cacheTag(path, "prices")
+  cacheLife("minutes")
+  try {
+    const res = await serverFetch(path)
+    return res.ok ? (((await res.json()) as { prices: Record<string, Offer> }).prices[id] ?? null) : null
+  } catch (error) {
+    console.error(error)
+    return null
+  }
 }

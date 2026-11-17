@@ -96,15 +96,22 @@ test('set-location maps cep to warehouse', async () => {
 test('page and product return content without prices', async () => {
   const page = await (await get('/page?cid=home')).json()
   const shelf = page.blocks.find((b: any) => b.type === 'shelf')
-  assert.deepEqual(page.blocks.map((b: any) => b.type), ['info-bar', 'hero', 'categories', 'shelf', 'benefits', 'banner', 'shelf'])
-  assert.equal(page.blocks[1].slides.length, 3)
+  assert.deepEqual(page.blocks.map((b: any) => b.type), [
+    'info-bar', 'hero', 'cards', 'shortcuts', 'callout', 'categories', 'tabbed-shelf', 'shelf', 'cards', 'tabbed-shelf', 'cards', 'shelf', 'cards',
+  ])
+  assert.equal(page.blocks[1].slides.length, 8)
   assert.equal(page.blocks[1].actions[0].label, 'Ver ofertas')
+  assert.deepEqual(page.blocks.filter((b: any) => b.type === 'cards').map((b: any) => b.items.length), [6, 4, 6, 3])
+  assert.equal(page.blocks[5].items.length, 11) // every category and subcategory
   assert.deepEqual(shelf.products[0], { id: 'tenis-runner', name: 'Tênis Runner', brand: 'Acme', image: '/images/tenis.svg' })
+  const tabbed = page.blocks.find((b: any) => b.type === 'tabbed-shelf')
+  assert.deepEqual(tabbed.tabs.map((t: any) => t.label), ['Mais vendidos', 'Corrida', 'Acessórios'])
+  assert.equal(tabbed.tabs[0].productIds, undefined) // ids are resolved to cards, like a shelf
   assert.equal((await get('/page?cid=nope')).status, 404)
 
   // every storefront link in the home resolves: /c/<category>, /product/<id> or /<cms page>
   const links = page.blocks.flatMap((b: any) => [
-    b.link, ...(b.actions ?? []).map((a: any) => a.link), ...(b.items ?? []).map((i: any) => i.link), ...(b.slides ?? []).map((s: any) => s.link),
+    b.link, b.banner?.link, ...(b.actions ?? []).map((a: any) => a.link), ...(b.items ?? []).map((i: any) => i.link), ...(b.slides ?? []).map((s: any) => s.link),
   ]).filter(Boolean)
   assert.ok(links.length >= 10)
   for (const link of links) {
@@ -116,8 +123,12 @@ test('page and product return content without prices', async () => {
 
   // CMS pages only list real products
   for (const cid of ['home', 'novidades', 'ofertas']) {
-    for (const b of (await (await get(`/page?cid=${cid}`)).json()).blocks.filter((b: any) => b.type === 'shelf')) {
-      for (const p of b.products) assert.ok(p.name && p.image, `${cid}/${b.id}`)
+    for (const b of (await (await get(`/page?cid=${cid}`)).json()).blocks) {
+      const lists = b.type === 'shelf' ? [b.products] : b.type === 'tabbed-shelf' ? b.tabs.map((t: any) => t.products) : []
+      for (const list of lists) {
+        assert.ok(list.length > 0, `${cid}/${b.id} is empty`)
+        for (const p of list) assert.ok(p.name && p.image, `${cid}/${b.id}`)
+      }
     }
   }
 

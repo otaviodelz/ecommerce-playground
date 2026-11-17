@@ -2,7 +2,9 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { getContent, type Block } from "@/lib/api"
 import { BannerCarousel } from "./banner-carousel"
+import { Cards } from "./cards"
 import { Shelf } from "./shelf"
+import { TabbedShelf } from "./tabbed-shelf"
 
 function CmsBlock({ block }: { block: Block }) {
   switch (block.type) {
@@ -27,7 +29,33 @@ function CmsBlock({ block }: { block: Block }) {
     case "banner":
       return <BannerCarousel slides={block.slides} />
     case "shelf":
-      return <Shelf block={block} />
+      return <Shelf title={block.title} products={block.products} />
+    case "tabbed-shelf":
+      return <TabbedShelf block={block} />
+    case "cards":
+      return <Cards title={block.title} items={block.items} />
+    case "shortcuts":
+      return (
+        <nav aria-label="Atalhos">
+          <ul className="shortcuts">
+            {block.items.map((item) => (
+              <li key={item.link}>
+                <Link href={item.link} prefetch>
+                  <img src={item.icon} alt="" width={72} height={72} />
+                  {item.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )
+    case "callout":
+      return (
+        <p className="callout">
+          <strong>{block.label}</strong>
+          <span>{block.link ? <Link href={block.link} prefetch>{block.text}</Link> : block.text}</span>
+        </p>
+      )
     case "info-bar":
       return <p className="info-bar">{block.link ? <Link href={block.link} prefetch>{block.text}</Link> : block.text}</p>
     case "categories":
