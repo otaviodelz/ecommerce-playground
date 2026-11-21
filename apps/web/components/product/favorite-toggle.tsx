@@ -1,6 +1,7 @@
 "use client"
 
-import { Toggle, ToggleIcon } from "@ui-sdk/react/toggle"
+import { Toggle, ToggleIcon } from "@playground/design-system/toggle"
+import { useTranslations } from "next-intl"
 import { useOptimistic, useTransition } from "react"
 import { useFavorites, useStoreActions } from "@/lib/client/queries"
 
@@ -8,12 +9,13 @@ type SetFavorite = (productId: string, favorite: boolean) => Promise<{ error?: s
 
 // The heart fills on press; if the action fails, the optimistic state falls back to the server's `favorited`.
 function FavoriteToggle({ productId, name, favorited, action }: { productId: string; name: string; favorited: boolean; action?: SetFavorite }) {
+  const t = useTranslations("Favorites")
   const [pressed, setPressed] = useOptimistic(favorited)
   const [, startTransition] = useTransition()
   return (
     <Toggle
-      aria-label={`Favoritar ${name}`}
-      className="favorite"
+      aria-label={t("toggle", { name })}
+      className="absolute top-2 right-2 grid h-8 w-8 cursor-pointer place-items-center border border-line bg-bg/80 p-0 text-fg-2 hover:bg-bg/80 hover:text-fg data-pressed:border-line data-pressed:bg-bg/80 data-pressed:text-destructive data-pressed:[&_svg]:fill-current data-disabled:cursor-default"
       pressed={pressed}
       disabled={!action}
       onPressedChange={(next) =>

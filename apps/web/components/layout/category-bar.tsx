@@ -1,5 +1,6 @@
 "use client"
 
+import { cn } from "@playground/design-system/cn"
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -8,15 +9,19 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
   NavigationMenuViewport,
-} from "@ui-sdk/react/navigation-menu"
+} from "@playground/design-system/navigation-menu"
+import { useTranslations } from "next-intl"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import type { MenuCategory } from "@/lib/api"
 
+const navItemClass =
+  "inline-flex items-center gap-1.5 border-0 border-b border-transparent py-2.5 text-fg-2 no-underline hover:text-fg aria-[current=page]:border-fg aria-[current=page]:text-fg"
+
 function TopLink({ href, current, className, children }: { href: string; current?: string; className?: string; children: React.ReactNode }) {
   return (
     <NavigationMenuItem>
-      <NavigationMenuLink render={<Link href={href} />} current={href === current} className={className}>
+      <NavigationMenuLink render={<Link href={href} />} current={href === current} className={cn(navItemClass, className)}>
         {children}
       </NavigationMenuLink>
     </NavigationMenuItem>
@@ -25,26 +30,38 @@ function TopLink({ href, current, className, children }: { href: string; current
 
 // Each category opens its subcategories on hover (or click/tap/keyboard); the panel's first link goes to the whole category.
 function CategoryLinks({ categories, current }: { categories: MenuCategory[]; current?: string }) {
+  const t = useTranslations("Nav")
   return (
-    <NavigationMenu className="catbar" aria-label="Categorias">
-      <NavigationMenuList>
+    <NavigationMenu className="border-b border-line font-mono text-[0.8rem]" aria-label={t("categories")}>
+      <NavigationMenuList className="m-0 flex list-none gap-6 overflow-x-auto px-4 whitespace-nowrap [scrollbar-width:none]">
         <TopLink href="/" current={current}>
-          Início
+          {t("home")}
         </TopLink>
         {categories.map((category) => {
-          const links = [{ id: category.id, name: `Tudo em ${category.name}` }, ...category.subcategories]
+          const links = [{ id: category.id, name: t("allIn", { category: category.name }) }, ...category.subcategories]
           const active = links.some((link) => `/c/${link.id}` === current)
           return (
             <NavigationMenuItem key={category.id} value={category.id}>
-              {/* ui-sdk draws the chevron (::after) and turns it while open. */}
-              <NavigationMenuTrigger data-active={active || undefined}>{category.name}</NavigationMenuTrigger>
+              <NavigationMenuTrigger
+                data-active={active || undefined}
+                className={cn(
+                  navItemClass,
+                  "h-auto cursor-pointer rounded-none bg-transparent px-0 font-[inherit] hover:bg-transparent data-open:text-fg data-[active]:border-fg data-[active]:text-fg",
+                )}
+              >
+                {category.name}
+              </NavigationMenuTrigger>
               {/* Kept in the HTML so crawlers and no-JS visitors still get every subcategory link. */}
               <NavigationMenuContent keepMounted>
-                <ul className="catbar-panel">
-                  {links.map((link) => (
-                    <li key={link.id}>
+                <ul className="m-0 grid min-w-56 list-none p-1.5">
+                  {links.map((link, index) => (
+                    <li key={link.id} className={index === 0 ? "mb-1 border-b border-line pb-1" : undefined}>
                       {/* Full prefetch so the category arrives complete, not as the shared fallback. */}
-                      <NavigationMenuLink render={<Link href={`/c/${link.id}`} prefetch />} current={`/c/${link.id}` === current}>
+                      <NavigationMenuLink
+                        render={<Link href={`/c/${link.id}`} prefetch />}
+                        current={`/c/${link.id}` === current}
+                        className="block px-2.5 py-1.5 text-fg-2 no-underline hover:bg-surface-2 hover:text-fg focus-visible:bg-surface-2 focus-visible:text-fg aria-[current=page]:text-fg aria-[current=page]:before:text-accent aria-[current=page]:before:content-['›_']"
+                      >
                         {link.name}
                       </NavigationMenuLink>
                     </li>
@@ -55,13 +72,16 @@ function CategoryLinks({ categories, current }: { categories: MenuCategory[]; cu
           )
         })}
         <TopLink href="/novidades" current={current}>
-          Novidades
+          {t("news")}
         </TopLink>
-        <TopLink href="/ofertas" current={current} className="deal">
-          Ofertas
+        <TopLink href="/ofertas" current={current} className="text-accent">
+          {t("deals")}
         </TopLink>
       </NavigationMenuList>
-      <NavigationMenuViewport sideOffset={0} />
+      <NavigationMenuViewport
+        sideOffset={0}
+        className="h-(--viewport-height) w-(--viewport-width) overflow-hidden border border-line bg-bg transition-[width,height,left] duration-150 motion-reduce:transition-none [&>[data-slot=navigation-menu-content]]:absolute [&>[data-slot=navigation-menu-content]]:top-0 [&>[data-slot=navigation-menu-content]]:start-0"
+      />
     </NavigationMenu>
   )
 }

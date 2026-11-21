@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useTranslations } from "next-intl"
 import type { Basket, Offer, ProductCard } from "../api"
 import { clientApi } from "./api"
 import { currentLocation, saveLocation, useLocation } from "./location"
@@ -40,27 +41,28 @@ export const useSearch = (q: string) =>
 // Each write puts the API's response straight into the cache, so the header counters, hearts and lists update together.
 export function useStoreActions() {
   const queryClient = useQueryClient()
+  const t = useTranslations("Errors")
   return {
     async addItem(productId: string): Promise<{ error?: string; locationRequired?: boolean }> {
       const warehouse = currentLocation()?.warehouse ?? ""
       const res = await clientApi<Basket>("/add-item", { body: { productId }, warehouse })
       // Not in stock in every warehouse and no CEP yet: the button asks for one, then calls this again.
       if (res.data.code === "location_required") return { locationRequired: true }
-      if (res.data.code === "out_of_stock") return { error: "Sem estoque para o seu CEP." }
-      if (!res.ok) return { error: "Não foi possível adicionar o item." }
+      if (res.data.code === "out_of_stock") return { error: t("outOfStock") }
+      if (!res.ok) return { error: t("addItem") }
       queryClient.setQueryData(["basket", warehouse], res.data)
       return {}
     },
     async deleteItem(productId: string): Promise<{ error?: string }> {
       const warehouse = currentLocation()?.warehouse ?? ""
       const res = await clientApi<Basket>("/delete-item", { body: { productId }, warehouse })
-      if (!res.ok) return { error: "Não foi possível remover o item." }
+      if (!res.ok) return { error: t("deleteItem") }
       queryClient.setQueryData(["basket", warehouse], res.data)
       return {}
     },
     async setFavorite(productId: string, favorite: boolean): Promise<{ error?: string }> {
       const res = await clientApi<{ products: ProductCard[] }>(favorite ? "/add-favorite" : "/delete-favorite", { body: { productId } })
-      if (!res.ok) return { error: res.data.error ?? "Não foi possível atualizar os favoritos." }
+      if (!res.ok) return { error: res.data.error ?? t("favorites") }
       queryClient.setQueryData(["favorites"], res.data)
       return {}
     },
@@ -68,7 +70,7 @@ export function useStoreActions() {
     async setLocation(form: FormData): Promise<{ error?: string }> {
       const cep = String(form.get("cep"))
       const res = await clientApi<{ warehouse: string }>("/set-location", { body: { cep } })
-      if (!res.ok) return { error: res.status === 400 ? "CEP inválido. Use 00000-000." : "Não foi possível salvar o CEP." }
+      if (!res.ok) return { error: res.status === 400 ? t("invalidCep") : t("saveCep") }
       saveLocation({ cep, warehouse: res.data.warehouse })
       return {}
     },

@@ -1,10 +1,11 @@
 "use client"
 
-import { Button } from "@ui-sdk/react/button"
-import { Field, FieldError, FieldLabel } from "@ui-sdk/react/field"
-import { Input } from "@ui-sdk/react/input"
-import { PasswordInput, PasswordInputControl, PasswordInputToggle } from "@ui-sdk/react/password-input"
+import { Button } from "@playground/design-system/button"
+import { Field, FieldError, FieldLabel } from "@playground/design-system/field"
+import { Input } from "@playground/design-system/input"
+import { PasswordInput, PasswordInputControl, PasswordInputToggle } from "@playground/design-system/password-input"
 import { useQueryClient } from "@tanstack/react-query"
+import { useTranslations } from "next-intl"
 import { useRouter } from "next/navigation"
 import { useState, useTransition, type FormEvent } from "react"
 import { signIn } from "@/lib/client/session"
@@ -28,41 +29,43 @@ function useFormAction(action: FormAction, onSuccess?: () => void) {
 }
 
 function LoginForm({ action, onSuccess }: { action: FormAction; onSuccess?: () => void }) {
+  const t = useTranslations("Forms")
   const { error, clear, onSubmit, pending } = useFormAction(action, onSuccess)
   return (
-    <form onSubmit={onSubmit} className="stack">
+    <form onSubmit={onSubmit} className="flex max-w-[26rem] flex-col gap-4">
       <Field name="email">
-        <FieldLabel>E-mail</FieldLabel>
+        <FieldLabel>{t("email")}</FieldLabel>
         <Input type="email" required autoComplete="username" onValueChange={clear} />
       </Field>
       <Field name="password" invalid={error ? true : undefined}>
-        <FieldLabel>Senha</FieldLabel>
+        <FieldLabel>{t("password")}</FieldLabel>
         <PasswordInput required onValueChange={clear}>
           <PasswordInputControl />
-          <PasswordInputToggle aria-label="Mostrar senha" />
+          <PasswordInputToggle aria-label={t("showPassword")} />
         </PasswordInput>
         <FieldError />
         {error && <FieldError match>{error}</FieldError>}
       </Field>
-      <Button type="submit" data-variant="solid" disabled={pending} focusableWhenDisabled>
-        Entrar
+      <Button type="submit" variant="solid" disabled={pending} focusableWhenDisabled>
+        {t("signIn")}
       </Button>
     </form>
   )
 }
 
 function CepForm({ action, defaultCep, onSuccess }: { action: FormAction; defaultCep?: string; onSuccess?: () => void }) {
+  const t = useTranslations("Forms")
   const { error, clear, onSubmit, pending } = useFormAction(action, onSuccess)
   return (
-    <form onSubmit={onSubmit} className="stack">
+    <form onSubmit={onSubmit} className="flex max-w-[26rem] flex-col gap-4">
       <Field name="cep" invalid={error ? true : undefined}>
-        <FieldLabel>CEP</FieldLabel>
-        <Input defaultValue={defaultCep} required pattern="\d{5}-?\d{3}" placeholder="00000-000" inputMode="numeric" onValueChange={clear} />
+        <FieldLabel>{t("cep")}</FieldLabel>
+        <Input mono defaultValue={defaultCep} required pattern="\d{5}-?\d{3}" placeholder="00000-000" inputMode="numeric" onValueChange={clear} />
         <FieldError />
         {error && <FieldError match>{error}</FieldError>}
       </Field>
-      <Button type="submit" data-variant="solid" disabled={pending} focusableWhenDisabled>
-        Salvar CEP
+      <Button type="submit" variant="solid" disabled={pending} focusableWhenDisabled>
+        {t("saveCep")}
       </Button>
     </form>
   )

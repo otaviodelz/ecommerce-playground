@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
+import createNextIntlPlugin from "next-intl/plugin";
 import { API_URL } from "./lib/config";
 
 const nextConfig: NextConfig = {
+  transpilePackages: ["@playground/design-system"],
   cacheComponents: true,
   partialPrefetching: true,
   // CMS image paths like /images/tenis.svg are served by the API.
@@ -15,4 +17,5 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Points next-intl at i18n/request.ts.
+export default createNextIntlPlugin()(nextConfig);

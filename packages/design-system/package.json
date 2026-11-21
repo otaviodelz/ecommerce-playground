@@ -1,0 +1,81 @@
+{
+  "name": "@playground/design-system",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "scripts": {
+    "build": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./cn": "./src/cn.ts",
+    "./tokens": "./src/tokens.ts",
+    "./styles.css": "./src/styles/index.css",
+    "./tokens.css": "./src/styles/tokens.css",
+    "./theme.css": "./src/styles/theme.css",
+    "./base.css": "./src/styles/base.css",
+    "./components.css": "./src/styles/components.css",
+    "./accordion": "./src/components/accordion.tsx",
+    "./alert-dialog": "./src/components/alert-dialog.tsx",
+    "./badge": "./src/components/badge.tsx",
+    "./breadcrumb": "./src/components/breadcrumb.tsx",
+    "./button": "./src/components/button.tsx",
+    "./callout": "./src/components/callout.tsx",
+    "./card": "./src/components/card.tsx",
+    "./carousel": "./src/components/carousel.tsx",
+    "./cell-grid": "./src/components/cell-grid.tsx",
+    "./checkbox": "./src/components/checkbox.tsx",
+    "./data-list": "./src/components/data-list.tsx",
+    "./dialog": "./src/components/dialog.tsx",
+    "./field": "./src/components/field.tsx",
+    "./input": "./src/components/input.tsx",
+    "./kbd": "./src/components/kbd.tsx",
+    "./layout": "./src/components/layout.tsx",
+    "./menu": "./src/components/menu.tsx",
+    "./navigation-menu": "./src/components/navigation-menu.tsx",
+    "./number-input": "./src/components/number-input.tsx",
+    "./password-input": "./src/components/password-input.tsx",
+    "./popover": "./src/components/popover.tsx",
+    "./progress": "./src/components/progress.tsx",
+    "./radio": "./src/components/radio.tsx",
+    "./segmented-control": "./src/components/segmented-control.tsx",
+    "./select": "./src/components/select.tsx",
+    "./separator": "./src/components/separator.tsx",
+    "./skeleton": "./src/components/skeleton.tsx",
+    "./slider": "./src/components/slider.tsx",
+    "./spinner": "./src/components/spinner.tsx",
+    "./switch": "./src/components/switch.tsx",
+    "./tabs": "./src/components/tabs.tsx",
+    "./textarea": "./src/components/textarea.tsx",
+    "./toast": "./src/components/toast.tsx",
+    "./toggle": "./src/components/toggle.tsx",
+    "./tooltip": "./src/components/tooltip.tsx"
+  },
+  "dependencies": {
+    "@ui-sdk/core": "0.1.0-beta.1",
+    "@ui-sdk/react": "0.1.0-beta.1",
+    "tailwind-merge": "^3.7.1"
+  },
+  "peerDependencies": {
+    "react": ">=19",
+    "react-dom": ">=19",
+    "tailwindcss": ">=4"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.10",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "jsdom": "^31.0.1",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "tailwindcss": "^4.3.5",
+    "typescript": "^5",
+    "vitest": "^5.1.0"
+  }
+}

@@ -1,8 +1,10 @@
 "use client"
 
-import { createInputController, Input } from "@ui-sdk/react/input"
-import { Popover, PopoverContent, PopoverDescription, PopoverTitle, PopoverTrigger } from "@ui-sdk/react/popover"
+import { Input, createInputController } from "@playground/design-system/input"
+import { Kbd } from "@playground/design-system/kbd"
+import { Popover, PopoverContent, PopoverDescription, PopoverTitle, PopoverTrigger } from "@playground/design-system/popover"
 import { useShortcut, useShortcutHint } from "@ui-sdk/react/shortcuts"
+import { useTranslations } from "next-intl"
 import Form from "next/form"
 import Link from "next/link"
 import { useState } from "react"
@@ -11,27 +13,43 @@ import { useAccountName, useBasket, useFavorites, useStoreActions } from "@/lib/
 import { CepForm, type FormAction } from "../forms"
 
 function SearchForm() {
+  const t = useTranslations("Header")
   const [input] = useState(createInputController)
-  useShortcut("/", () => input.focus(), { description: "Buscar produtos" })
+  useShortcut("/", () => input.focus(), { description: t("search") })
   const hint = useShortcutHint("/")
   return (
-    <Form action="/search" className="search" role="search">
-      <kbd aria-hidden="true">/</kbd>
-      <Input controller={input} type="search" name="q" aria-label="Buscar produtos" placeholder="buscar produtos" aria-keyshortcuts={hint.ariaKeyshortcuts} />
+    <Form action="/search" className="relative flex flex-[1_1_16rem] items-center gap-2" role="search">
+      <Kbd aria-hidden="true" className="pointer-events-none absolute start-2.5">
+        /
+      </Kbd>
+      <Input
+        mono
+        controller={input}
+        type="search"
+        name="q"
+        className="w-full ps-9"
+        aria-label={t("search")}
+        placeholder={t("searchPlaceholder")}
+        aria-keyshortcuts={hint.ariaKeyshortcuts}
+      />
     </Form>
   )
 }
 
 function CepPopover({ action, cep }: { action: FormAction; cep?: string }) {
+  const t = useTranslations("Header")
   const [open, setOpen] = useState(false)
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger className="cep-trigger" aria-label={`CEP de entrega: ${cep ?? "não informado"}`}>
-        cep <strong>{cep ?? "informar"}</strong>
+      <PopoverTrigger
+        className="h-auto border-0 bg-transparent p-0 font-[inherit] text-fg-2 no-underline hover:bg-transparent hover:text-fg"
+        aria-label={t("cepLabel", { cep: cep ?? t("cepUnknown") })}
+      >
+        {t("cep")} <strong className="font-normal text-fg underline">{cep ?? t("cepEmpty")}</strong>
       </PopoverTrigger>
       <PopoverContent>
-        <PopoverTitle>Onde entregar?</PopoverTitle>
-        <PopoverDescription className="muted">O preço e o estoque mudam conforme o CEP.</PopoverDescription>
+        <PopoverTitle>{t("cepTitle")}</PopoverTitle>
+        <PopoverDescription className="text-fg-3">{t("cepDescription")}</PopoverDescription>
         <CepForm action={action} defaultCep={cep} onSuccess={() => setOpen(false)} />
       </PopoverContent>
     </Popover>
@@ -40,6 +58,7 @@ function CepPopover({ action, cep }: { action: FormAction; cep?: string }) {
 
 // Per visitor, so it fills in from the browser; the static HTML ships it with empty counters.
 function Session() {
+  const t = useTranslations("Header")
   const location = useLocation()
   const name = useAccountName().data
   const basket = useBasket().data
@@ -48,14 +67,20 @@ function Session() {
   const count = basket?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0
   const favoriteCount = favorites?.products.length ?? 0
   return (
-    <div className="session">
+    <div className="flex items-center gap-4 font-mono text-[0.8rem] text-fg-2 sm:gap-5">
       <CepPopover action={setLocation} cep={location?.cep} />
-      {name ? <span>olá, {name.split(" ")[0].toLowerCase()}</span> : <Link href="/login">entrar</Link>}
-      <Link href="/favorites" aria-label={`Favoritos, ${favoriteCount} ${favoriteCount === 1 ? "produto" : "produtos"}`}>
-        favoritos <span className="count">[{favoriteCount}]</span>
+      {name ? (
+        <span>{t("hello", { name: name.split(" ")[0].toLowerCase() })}</span>
+      ) : (
+        <Link href="/login" className="text-fg-2 no-underline hover:text-fg">
+          {t("signIn")}
+        </Link>
+      )}
+      <Link href="/favorites" className="text-fg-2 no-underline hover:text-fg" aria-label={t("favoritesLabel", { count: favoriteCount })}>
+        {t("favorites")} <span className="text-accent">[{favoriteCount}]</span>
       </Link>
-      <Link href="/basket" aria-label={`Cesta, ${count} ${count === 1 ? "item" : "itens"}`}>
-        cesta <span className="count">[{count}]</span>
+      <Link href="/basket" className="text-fg-2 no-underline hover:text-fg" aria-label={t("basketLabel", { count })}>
+        {t("basket")} <span className="text-accent">[{count}]</span>
       </Link>
     </div>
   )

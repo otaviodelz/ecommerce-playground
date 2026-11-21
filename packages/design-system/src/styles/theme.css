@@ -1,0 +1,40 @@
+@theme inline {
+  --color-bg: var(--ds-bg);
+  --color-surface: var(--ds-surface);
+  --color-surface-2: var(--ds-surface-2);
+  --color-line: var(--ds-line);
+  --color-line-strong: var(--ds-line-strong);
+
+  --color-fg: var(--ds-fg);
+  --color-fg-2: var(--ds-fg-2);
+  --color-fg-3: var(--ds-fg-3);
+
+  --color-primary: var(--ui-primary);
+  --color-primary-fg: var(--ui-primary-foreground);
+
+  --color-accent: var(--ds-accent);
+  --color-accent-fg: var(--ds-accent-fg);
+  --color-accent-surface: var(--ds-accent-surface);
+
+  --color-destructive: var(--ds-destructive);
+  --color-destructive-fg: var(--ds-destructive-fg);
+  --color-destructive-surface: var(--ds-destructive-surface);
+
+  --color-warning: var(--ds-warning);
+  --color-warning-fg: var(--ds-warning-fg);
+  --color-warning-surface: var(--ds-warning-surface);
+
+  --font-sans: var(--ds-font-sans);
+  --font-mono: var(--ds-font-mono);
+
+  --text-display: var(--ds-text-display);
+  --text-xl: var(--ds-text-xl);
+  --text-lg: var(--ds-text-lg);
+  --text-md: var(--ds-text-md);
+  --text-base: var(--ds-text-base);
+  --text-sm: var(--ds-text-sm);
+  --text-xs: var(--ds-text-xs);
+
+  --radius-none: 0px;
+  --container-store: var(--ds-container-max);
+}

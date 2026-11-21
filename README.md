@@ -1,6 +1,6 @@
 # ecommerce-playground
 
-Monorepo (pnpm + Turborepo). `pnpm install`, então `pnpm dev` / `pnpm test` / `pnpm build`.
+Monorepo (pnpm + Turborepo). `pnpm install`, então `pnpm dev` / `pnpm test` / `pnpm build` / `pnpm start`.
 
 ## apps/server
 
@@ -52,7 +52,8 @@ Next.js 16 em `http://localhost:3000` (`API_URL` para o servidor e `NEXT_PUBLIC_
 - Páginas: `/` (CMS home), `/[cid]` (páginas CMS, ex. `/ofertas`), `/c/[id]` (categorias), `/product/[id]`, `/search?q=`, `/basket`, `/favorites`, `/login`.
   Cada card tem um coração (favoritar); o estado vem de uma query de favoritos compartilhada, como o preço.
   Links antigos `/page?cid=x` redirecionam (308) para `/x`, ou `/c/x` se `x` virou categoria.
-- Tema "terminal" (escuro fixo, cantos retos, títulos mono) pelos tokens `--ui-*` em `app/globals.css`.
+- Tema "terminal" (escuro fixo, cantos retos, títulos mono) centralizado em `packages/design-system` (`@playground/design-system/styles.css`) com Tailwind CSS v4 (`@theme inline`) e tokens `--ds-*` / `--ui-*`.
+- Catálogo e documentação interativa do Design System em `apps/storybook` (`pnpm --filter @playground/storybook dev`, porta `6006`), com `@storybook/addon-a11y` e autodocs, totalmente isolado do bundle do `apps/web`.
   Header: busca (atalho `/`), CEP num popover, conta e cesta com contador; barra de categorias abaixo.
   A barra vem de `/categories` (cacheada, no HTML estático) e é um Navigation Menu do ui-sdk: hover, clique ou teclado abrem as subcategorias.
 
@@ -69,5 +70,5 @@ Next.js 16 em `http://localhost:3000` (`API_URL` para o servidor e `NEXT_PUBLIC_
   Esse preço fica em cache de minutos no servidor, então a PDP revalida a cada minuto; o preço visível continua vindo do browser, pelo CEP do visitante, e na PDP é buscado sem esperar o viewport.
 - Revalidação: `POST /api/revalidate` com header `x-revalidate-secret: $REVALIDATE_SECRET` e `{ "tag": "/page?cid=home" }` (ou `/product?id=…`, `/category?id=…`, `/categories`, `/prices?ids=…` para o preço de um produto no HTML, `prices` para todos).
   Os preços visíveis não passam pelo cache do Next: o react-query os mantém por 30s no browser.
-- **O build pré-gera a home, então precisa da API no ar** (`pnpm --filter server dev` antes de `pnpm build`).
+- **O build pré-gera a home e as categorias** usando a API: `pnpm build` (via `scripts/build.mjs`) compila `server` e `@playground/design-system`, sobe `apps/server/dist/index.js` automaticamente se `API_URL` local não estiver no ar, executa o build do `web` e encerra o servidor ao final.
   O conteúdo buscado fica em `apps/web/.next/cache/fetch-cache` e o build seguinte reaproveita por até 1h: depois de mudar o conteúdo da API, apague essa pasta (ou chame o webhook de revalidação) antes de buildar.

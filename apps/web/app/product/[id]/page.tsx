@@ -1,9 +1,14 @@
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbSeparator } from "@playground/design-system/breadcrumb"
+import { DataList, DataListDetail, DataListItem, DataListTerm } from "@playground/design-system/data-list"
+import { Skeleton } from "@playground/design-system/skeleton"
 import type { Metadata } from "next"
+import { useTranslations } from "next-intl"
+import { getTranslations } from "next-intl/server"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Suspense } from "react"
 import { getContent, getDefaultOffer, type Offer as OfferInfo, type Product } from "@/lib/api"
-import { openGraphBase, SITE_URL } from "@/lib/config"
+import { market, openGraphBase, SITE_URL } from "@/lib/config"
 import { Offer } from "@/components/product/offer"
 
 const getProduct = (id: string) => getContent<Product>(`/product?id=${encodeURIComponent(id)}`)
@@ -27,7 +32,7 @@ function ProductJsonLd({ product, offer }: { product: Product; offer: OfferInfo 
       offers: {
         "@type": "Offer",
         url,
-        priceCurrency: "BRL",
+        priceCurrency: market.currency,
         price: amount(offer.price),
         availability: `https://schema.org/${offer.available ? "InStock" : "OutOfStock"}`,
         itemCondition: "https://schema.org/NewCondition",
@@ -40,40 +45,53 @@ function ProductJsonLd({ product, offer }: { product: Product; offer: OfferInfo 
 
 async function ProductDetail({ params }: Pick<PageProps<"/product/[id]">, "params">) {
   const { id } = await params
-  const [res, offer] = await Promise.all([getProduct(id), getDefaultOffer(id)])
+  const [res, offer, t, offerT] = await Promise.all([getProduct(id), getDefaultOffer(id), getTranslations("Common"), getTranslations("Offer")])
   if (res.status === 404) notFound()
   const product = res.data
 
   return (
-    <article className="product">
+    <article className="grid grid-cols-[repeat(auto-fit,minmax(18rem,1fr))] gap-8">
       <ProductJsonLd product={product} offer={offer} />
       {/* Open Graph product tags for link previews; React hoists these into <head>. */}
       <meta property="og:type" content="product" />
       {offer && (
         <>
           <meta property="product:price:amount" content={amount(offer.price)} />
-          <meta property="product:price:currency" content="BRL" />
+          <meta property="product:price:currency" content={market.currency} />
           <meta property="product:availability" content={offer.available ? "in stock" : "out of stock"} />
         </>
       )}
-      <img src={product.images[0]} alt={product.name} width={600} height={600} />
-      <div className="stack">
-        <nav className="breadcrumb" aria-label="Você está em">
-          <Link href={`/c/${product.category.id}`} prefetch>{product.category.name}</Link> ›{" "}
-          <Link href={`/c/${product.subcategory.id}`} prefetch>{product.subcategory.name}</Link> › {product.brand}
-        </nav>
+      <img src={product.images[0]} alt={product.name} width={600} height={600} className="aspect-square w-full border border-line object-cover" />
+      <div className="flex max-w-[26rem] flex-col gap-4">
+        <Breadcrumb aria-label={t("youAreHere")}>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <Link href={`/c/${product.category.id}`} prefetch>
+                {product.category.name}
+              </Link>
+              <BreadcrumbSeparator />
+            </BreadcrumbItem>
+            <BreadcrumbItem>
+              <Link href={`/c/${product.subcategory.id}`} prefetch>
+                {product.subcategory.name}
+              </Link>
+              <BreadcrumbSeparator />
+            </BreadcrumbItem>
+            <BreadcrumbItem>{product.brand}</BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
         <h1>{product.name}</h1>
         {/* Always on screen at the top of the page, so it skips the viewport wait. */}
-        <Offer product={product} label="Adicionar à cesta" className="offer" eager />
-        <p className="muted">{product.description}</p>
-        <dl className="specs">
+        <Offer product={product} label={offerT("addToBasket")} className="grid justify-items-start gap-3" eager />
+        <p className="text-fg-3">{product.description}</p>
+        <DataList>
           {Object.entries(product.specs).map(([key, value]) => (
-            <div key={key}>
-              <dt className="muted">{key}</dt>
-              <dd>{value}</dd>
-            </div>
+            <DataListItem key={key}>
+              <DataListTerm>{key}</DataListTerm>
+              <DataListDetail>{value}</DataListDetail>
+            </DataListItem>
           ))}
-        </dl>
+        </DataList>
       </div>
     </article>
   )
@@ -102,31 +120,32 @@ export async function generateStaticParams() {
 
 // Same layout as ProductDetail (image, breadcrumb, title, offer, description, specs), so nothing jumps when it arrives.
 function ProductSkeleton() {
+  const t = useTranslations("Product")
   return (
-    <article className="product" aria-busy="true">
+    <article className="grid grid-cols-[repeat(auto-fit,minmax(18rem,1fr))] gap-8" aria-busy="true">
       <p className="sr-only" role="status">
-        Carregando produto
+        {t("loading")}
       </p>
-      <span className="skeleton product-skeleton-image" />
-      <div className="stack" aria-hidden="true">
-        <span className="skeleton" style={{ width: "14rem", height: "0.75rem" }} />
-        <span className="skeleton" style={{ width: "75%", height: "2.1rem" }} />
-        <div className="offer">
-          <span className="skeleton" style={{ width: "8rem", height: "2.6rem", marginTop: "0.4rem" }} />
-          <span className="skeleton" style={{ width: "10rem", height: "2.25rem" }} />
+      <Skeleton className="aspect-square h-auto w-full border border-line" />
+      <div className="flex max-w-[26rem] flex-col gap-4" aria-hidden="true">
+        <Skeleton className="h-3 w-56" />
+        <Skeleton className="h-[2.1rem] w-3/4" />
+        <div className="grid justify-items-start gap-3">
+          <Skeleton className="mt-1.5 h-[2.6rem] w-32" />
+          <Skeleton className="h-9 w-40" />
         </div>
-        <div className="skeleton-lines">
-          <span className="skeleton" style={{ width: "100%" }} />
-          <span className="skeleton" style={{ width: "85%" }} />
+        <div className="grid gap-2">
+          <Skeleton className="w-full" />
+          <Skeleton className="w-[85%]" />
         </div>
-        <dl className="specs">
+        <DataList>
           {[0, 1, 2].map((row) => (
-            <div key={row}>
-              <span className="skeleton" style={{ width: "5rem" }} />
-              <span className="skeleton" style={{ width: "7rem" }} />
-            </div>
+            <DataListItem key={row}>
+              <Skeleton className="w-20" />
+              <Skeleton className="w-28" />
+            </DataListItem>
           ))}
-        </dl>
+        </DataList>
       </div>
     </article>
   )

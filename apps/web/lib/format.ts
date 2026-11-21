@@ -1,4 +1,6 @@
-export const brl = (cents: number) => (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+import { market } from "./config"
+
+export const money = (cents: number) => (cents / 100).toLocaleString(market.locale, { style: "currency", currency: market.currency })
 
 // Up to 10 interest-free installments of at least R$ 10; null when it can't be split.
 export function installments(cents: number) {

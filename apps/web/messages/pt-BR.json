@@ -1,0 +1,115 @@
+{
+  "Metadata": {
+    "description": "Ecommerce playground"
+  },
+  "Common": {
+    "loading": "Carregando…",
+    "seeProducts": "Ver produtos",
+    "youAreHere": "Você está em"
+  },
+  "Nav": {
+    "categories": "Categorias",
+    "home": "Início",
+    "allIn": "Tudo em {category}",
+    "news": "Novidades",
+    "deals": "Ofertas",
+    "signIn": "Entrar",
+    "favorites": "Favoritos",
+    "basket": "Cesta",
+    "shortcuts": "Atalhos"
+  },
+  "Header": {
+    "search": "Buscar produtos",
+    "searchPlaceholder": "buscar produtos",
+    "cepLabel": "CEP de entrega: {cep}",
+    "cepUnknown": "não informado",
+    "cep": "cep",
+    "cepEmpty": "informar",
+    "cepTitle": "Onde entregar?",
+    "cepDescription": "O preço e o estoque mudam conforme o CEP.",
+    "hello": "olá, {name}",
+    "signIn": "entrar",
+    "favorites": "favoritos",
+    "favoritesLabel": "Favoritos, {count, plural, =0 {# produtos} one {# produto} other {# produtos}}",
+    "basket": "cesta",
+    "basketLabel": "Cesta, {count, plural, =0 {# itens} one {# item} other {# itens}}"
+  },
+  "Footer": {
+    "shop": "Loja",
+    "account": "Sua conta",
+    "help": "Comprar aqui",
+    "freeShipping": "Frete grátis acima de R$ 199",
+    "returns": "Troca em até 30 dias",
+    "installments": "Até 10x sem juros no cartão",
+    "cepPricing": "Preço e estoque pelo seu CEP",
+    "legal": "© Playground Store. Loja de estudo: produtos, preços e pedidos são fictícios."
+  },
+  "Forms": {
+    "email": "E-mail",
+    "password": "Senha",
+    "showPassword": "Mostrar senha",
+    "signIn": "Entrar",
+    "cep": "CEP",
+    "saveCep": "Salvar CEP"
+  },
+  "Errors": {
+    "outOfStock": "Sem estoque para o seu CEP.",
+    "addItem": "Não foi possível adicionar o item.",
+    "deleteItem": "Não foi possível remover o item.",
+    "favorites": "Não foi possível atualizar os favoritos.",
+    "invalidCep": "CEP inválido. Use 00000-000.",
+    "saveCep": "Não foi possível salvar o CEP."
+  },
+  "Basket": {
+    "loadError": "Não foi possível carregar a cesta.",
+    "empty": "Sua cesta está vazia.",
+    "removing": "Removendo",
+    "remove": "Remover",
+    "subtotal": "Subtotal: {value}"
+  },
+  "Favorites": {
+    "loadError": "Não foi possível carregar os favoritos.",
+    "empty": "Você ainda não favoritou nenhum produto.",
+    "toggle": "Favoritar {name}"
+  },
+  "Offer": {
+    "add": "Adicionar",
+    "addToBasket": "Adicionar à cesta",
+    "unavailable": "Indisponível",
+    "adding": "Adicionando…",
+    "added": "{name} adicionado à cesta.",
+    "askCepTitle": "Informe seu CEP",
+    "askCepDescription": "{name} não tem estoque em todas as regiões. Com o seu CEP conferimos o estoque e adicionamos à cesta.",
+    "cancel": "Cancelar",
+    "listPrice": "de ",
+    "installments": "{count}x de {value} sem juros",
+    "loadingPrice": "Carregando preço",
+    "priceUnavailable": "Preço indisponível",
+    "outOfStock": "Sem estoque"
+  },
+  "Product": {
+    "loading": "Carregando produto"
+  },
+  "Category": {
+    "title": "{name} em {parent}",
+    "count": "{count, plural, =0 {# produtos} one {# produto} other {# produtos}}"
+  },
+  "Search": {
+    "tooShort": "Digite pelo menos 2 letras para buscar.",
+    "searching": "Buscando…",
+    "error": "Erro na busca.",
+    "results": "{count, plural, =0 {# resultados} one {# resultado} other {# resultados}} para “{q}”",
+    "noResults": "Tente outro termo, como “tênis” ou “mochila”."
+  },
+  "Carousel": {
+    "highlights": "Destaques",
+    "pause": "Pausar destaques",
+    "play": "Reproduzir destaques",
+    "pick": "Escolher destaque",
+    "goTo": "Ir para: {name}",
+    "previous": "Destaque anterior",
+    "next": "Próximo destaque",
+    "previousIn": "Anteriores em {title}",
+    "nextIn": "Próximos em {title}"
+  }
+}

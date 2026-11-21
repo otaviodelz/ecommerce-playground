@@ -1,5 +1,12 @@
 import { cleanup } from "@testing-library/react"
-import { afterEach } from "vitest"
+import { afterEach, vi } from "vitest"
+
+// Components read the real pt-BR messages without wrapping every render in NextIntlClientProvider.
+vi.mock("next-intl", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("next-intl")>()
+  const { default: messages } = await import("@/messages/pt-BR.json")
+  return { ...actual, useTranslations: (namespace?: never) => actual.createTranslator({ locale: "pt-BR", messages, namespace }) }
+})
 
 declare global {
   var __UI_SDK_STRICT__: boolean | undefined
