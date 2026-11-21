@@ -1,62 +1,96 @@
+import { Button } from "@playground/design-system/button"
+import { Callout, CalloutBody, CalloutLabel } from "@playground/design-system/callout"
+import { CellGrid, CellGridItem } from "@playground/design-system/cell-grid"
+import { InfoBar } from "@playground/design-system/layout"
+import { useTranslations } from "next-intl"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { getContent, type Block } from "@/lib/api"
 import { BannerCarousel } from "./banner-carousel"
+import { Cards } from "./cards"
 import { Shelf } from "./shelf"
+import { TabbedShelf } from "./tabbed-shelf"
 
-function CmsBlock({ block, ids }: { block: Block; ids: string }) {
+function CmsBlock({ block }: { block: Block }) {
+  const t = useTranslations("Nav")
   switch (block.type) {
     case "hero":
       return (
-        <section className="hero">
+        <section className="grid grid-cols-1 items-center gap-8 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
           <div>
-            <h1>{block.title}</h1>
-            <p>{block.text}</p>
-            <div className="actions">
+            <h1 className="text-display leading-[1.1]">{block.title}</h1>
+            <p className="mt-3 max-w-[28rem] text-md text-fg-3">{block.text}</p>
+            <div className="mt-5 flex flex-wrap gap-2">
               {block.actions.map((action, index) => (
-                <Link key={action.link} href={action.link} prefetch className={index === 0 ? "button primary" : "button"}>
+                <Button key={action.link} render={<Link href={action.link} prefetch />} variant={index === 0 ? "solid" : "outline"} size="lg">
                   {action.label}
                   {index > 0 && " ›"}
-                </Link>
+                </Button>
               ))}
             </div>
           </div>
-          <BannerCarousel slides={block.slides} />
+          <BannerCarousel slides={block.slides} hero />
         </section>
       )
     case "banner":
       return <BannerCarousel slides={block.slides} />
     case "shelf":
-      return <Shelf block={block} ids={ids} />
-    case "info-bar":
-      return <p className="info-bar">{block.link ? <Link href={block.link} prefetch>{block.text}</Link> : block.text}</p>
-    case "categories":
+      return <Shelf title={block.title} products={block.products} />
+    case "tabbed-shelf":
+      return <TabbedShelf block={block} />
+    case "cards":
+      return <Cards title={block.title} items={block.items} />
+    case "shortcuts":
       return (
-        <section>
-          <h2 className="section-title">{block.title}</h2>
-          <ul className="cells">
+        <nav aria-label={t("shortcuts")}>
+          <ul className="m-0 flex list-none flex-wrap gap-4 p-0">
             {block.items.map((item) => (
               <li key={item.link}>
-                <Link href={item.link} prefetch>
-                  <span className={item.link === "/ofertas" ? "deal" : undefined}>{item.label}</span>
-                  <small>{item.description} ›</small>
+                <Link href={item.link} prefetch className="group grid w-[6.5rem] justify-items-center gap-1.5 text-center font-mono text-xs text-fg-2 no-underline">
+                  <img src={item.icon} alt="" width={72} height={72} className="border border-line group-hover:border-accent" />
+                  {item.label}
                 </Link>
               </li>
             ))}
           </ul>
+        </nav>
+      )
+    case "callout":
+      return (
+        <Callout render={<p />}>
+          <CalloutLabel>{block.label}</CalloutLabel>
+          <CalloutBody>{block.link ? <Link href={block.link} prefetch>{block.text}</Link> : block.text}</CalloutBody>
+        </Callout>
+      )
+    case "info-bar":
+      return <InfoBar>{block.link ? <Link href={block.link} prefetch>{block.text}</Link> : block.text}</InfoBar>
+    case "categories":
+      return (
+        <section>
+          <h2 className="mb-3 flex items-baseline justify-between">{block.title}</h2>
+          <CellGrid>
+            {block.items.map((item) => (
+              <CellGridItem key={item.link}>
+                <Link href={item.link} prefetch className="grid gap-0.5 no-underline">
+                  <span className={item.link === "/ofertas" ? "text-accent" : undefined}>{item.label}</span>
+                  <small className="font-mono text-xs text-fg-3">{item.description} ›</small>
+                </Link>
+              </CellGridItem>
+            ))}
+          </CellGrid>
         </section>
       )
     case "benefits":
       return (
-        <ol className="cells">
+        <CellGrid render={<ol />}>
           {block.items.map((item, index) => (
-            <li key={item.title}>
-              <small>{String(index + 1).padStart(2, "0")}</small>
+            <CellGridItem key={item.title}>
+              <small className="font-mono text-xs text-fg-3">{String(index + 1).padStart(2, "0")}</small>
               <span>{item.title}</span>
-              <small>{item.description}</small>
-            </li>
+              <small className="font-mono text-xs text-fg-3">{item.description}</small>
+            </CellGridItem>
           ))}
-        </ol>
+        </CellGrid>
       )
     default:
       // A block type this storefront doesn't know yet (CMS ahead of the code) is skipped, not a crash.
@@ -67,10 +101,7 @@ function CmsBlock({ block, ids }: { block: Block; ids: string }) {
 async function CmsBlocks({ cid }: { cid: string }) {
   const res = await getContent<{ blocks: Block[] }>(`/page?cid=${encodeURIComponent(cid)}`)
   if (res.status === 404) notFound()
-  const { blocks } = res.data
-  const ids = [...new Set(blocks.flatMap((b) => (b.type === "shelf" ? b.products.map((p) => p.id) : [])))].join(",")
-
-  return blocks.map((block) => <CmsBlock key={block.id} block={block} ids={ids} />)
+  return res.data.blocks.map((block) => <CmsBlock key={block.id} block={block} />)
 }
 
 export { CmsBlocks }

@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl"
 import { Suspense } from "react"
 import { CmsBlocks } from "@/components/cms/cms-blocks"
 
@@ -9,8 +10,9 @@ async function Content({ params }: Pick<PageProps<"/[cid]">, "params">) {
 }
 
 export default function CmsPage({ params }: PageProps<"/[cid]">) {
+  const t = useTranslations("Common")
   return (
-    <Suspense fallback={<p className="muted">Carregando…</p>}>
+    <Suspense fallback={<p className="text-fg-3">{t("loading")}</p>}>
       <Content params={params} />
     </Suspense>
   )

@@ -1,33 +1,25 @@
 import Link from "next/link"
-import { Suspense } from "react"
-import { getFavorites, type ProductCard as Card } from "@/lib/api"
-import { setFavorite } from "@/lib/actions"
-import { FavoriteToggle } from "./favorite-toggle"
+import type { ProductCard as Card } from "@/lib/api"
+import { Favorite } from "./favorite-toggle"
 import { Offer } from "./offer"
 
-async function Favorite({ product }: { product: Card }) {
-  const res = await getFavorites()
-  const favorited = res.ok && res.data.products.some((p) => p.id === product.id)
-  return <FavoriteToggle productId={product.id} name={product.name} favorited={favorited} action={setFavorite} />
-}
-
-function ProductCard({ product, ids }: { product: Card; ids: string }) {
+// Content (name, image, link) is static; the heart and the offer are per visitor and load in the browser.
+function ProductCard({ product }: { product: Card }) {
   return (
-    <article className="card">
-      <Link href={`/product/${product.id}`}>
-        <img src={product.image} alt="" width={300} height={300} />
-        <div className="card-body">
-          <h3>{product.name}</h3>
-          <p className="muted">{product.brand}</p>
+    <article className="relative flex h-full flex-col border border-line bg-surface">
+      <Link href={`/product/${product.id}`} className="block no-underline">
+        <img src={product.image} alt="" width={300} height={300} className="aspect-square w-full border-b border-line object-cover" />
+        <div className="flex flex-col gap-0.5 px-3 pt-3">
+          <h3 className="font-sans font-medium tracking-normal">{product.name}</h3>
+          <p className="text-fg-3">{product.brand}</p>
         </div>
       </Link>
-      {/* Per visitor like the price: a disabled heart holds the spot until the favorites load. */}
-      <Suspense fallback={<FavoriteToggle productId={product.id} name={product.name} favorited={false} />}>
-        <Favorite product={product} />
-      </Suspense>
-      <div className="card-offer">
-        <Offer product={product} ids={ids} />
-      </div>
+      <Favorite productId={product.id} name={product.name} />
+      <Offer
+        product={product}
+        overlayDiscount
+        className="flex flex-1 flex-col gap-3 px-3 pb-3 [&>[data-slot=button]]:mt-auto [&>[data-slot=button]]:w-full"
+      />
     </article>
   )
 }

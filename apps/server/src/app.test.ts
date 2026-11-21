@@ -5,8 +5,33 @@ import { app } from './app.js'
 
 process.env.API_DELAY_MS = '0' // read per request, so the simulated latency stays out of the tests
 
-const post = (path: string, body: unknown) =>
-  app.request(path, { method: 'POST', body: JSON.stringify(body), headers: { 'content-type': 'application/json' } })
+const post = (path: string, body: unknown, headers: Record<string, string> = {}) =>
+  app.request(path, { method: 'POST', body: JSON.stringify(body), headers: { 'content-type': 'application/json', ...headers } })
+
+// Content and location routes need an access token too: one guest session for the tests that don't care whose it is.
+const { accessToken: guestToken } = await (await post('/guest-login', {})).json()
+const auth = { authorization: `Bearer ${guestToken}` }
+const get = (path: string, headers: Record<string, string> = {}) => app.request(path, { headers: { ...auth, ...headers } })
+
+test('every route needs an access token, except signing in and images', async () => {
+  for (const path of ['/page?cid=home', '/categories', '/category?id=corrida', '/product?id=tenis-runner', '/search?q=tenis', '/prices?ids=tenis-runner', '/basket', '/favorites']) {
+    assert.equal((await app.request(path)).status, 401, path)
+    assert.equal((await app.request(path, { headers: { authorization: 'Bearer garbage' } })).status, 401, path)
+    assert.equal((await get(path)).status, 200, path)
+  }
+  assert.equal((await post('/set-location', { cep: '01310-100' })).status, 401)
+  assert.equal((await post('/add-item', { productId: 'tenis-runner' })).status, 401)
+  assert.equal((await app.request('/images/tenis.svg')).status, 200)
+})
+
+test('the storefront origin may call the API from the browser', async () => {
+  const res = await app.request('/prices?ids=tenis-runner', {
+    method: 'OPTIONS',
+    headers: { origin: 'http://localhost:3000', 'access-control-request-method': 'GET', 'access-control-request-headers': 'authorization,warehouse' },
+  })
+  assert.equal(res.headers.get('access-control-allow-origin'), 'http://localhost:3000')
+  assert.match(res.headers.get('access-control-allow-headers') ?? '', /authorization/)
+})
 
 test('images serves sized svg placeholders for safe slugs only', async () => {
   const res = await app.request('/images/hero.svg?w=1200&h=400')
@@ -59,113 +84,123 @@ test('refresh-token issues new tokens only for a valid refresh token', async () 
 })
 
 test('set-location maps cep to warehouse', async () => {
-  const wh = async (cep: unknown) => (await (await post('/set-location', { cep })).json()).warehouse
+  const wh = async (cep: unknown) => (await (await post('/set-location', { cep }, auth)).json()).warehouse
   assert.equal(await wh('01310-100'), 'sp-01')
   assert.equal(await wh('22041001'), 'rj-01')
   assert.equal(await wh('30130-010'), 'mg-01')
   assert.equal(await wh('69005-000'), 'br-01')
-  assert.equal((await post('/set-location', { cep: '123' })).status, 400)
-  assert.equal((await post('/set-location', { cep: 1310100 })).status, 400)
+  assert.equal((await post('/set-location', { cep: '123' }, auth)).status, 400)
+  assert.equal((await post('/set-location', { cep: 1310100 }, auth)).status, 400)
 })
 
 test('page and product return content without prices', async () => {
-  const page = await (await app.request('/page?cid=home')).json()
+  const page = await (await get('/page?cid=home')).json()
   const shelf = page.blocks.find((b: any) => b.type === 'shelf')
-  assert.deepEqual(page.blocks.map((b: any) => b.type), ['info-bar', 'hero', 'categories', 'shelf', 'benefits', 'banner', 'shelf'])
-  assert.equal(page.blocks[1].slides.length, 3)
+  assert.deepEqual(page.blocks.map((b: any) => b.type), [
+    'info-bar', 'hero', 'cards', 'shortcuts', 'callout', 'categories', 'tabbed-shelf', 'shelf', 'cards', 'tabbed-shelf', 'cards', 'shelf', 'cards',
+  ])
+  assert.equal(page.blocks[1].slides.length, 8)
   assert.equal(page.blocks[1].actions[0].label, 'Ver ofertas')
+  assert.deepEqual(page.blocks.filter((b: any) => b.type === 'cards').map((b: any) => b.items.length), [6, 4, 6, 3])
+  assert.equal(page.blocks[5].items.length, 11) // every category and subcategory
   assert.deepEqual(shelf.products[0], { id: 'tenis-runner', name: 'Tênis Runner', brand: 'Acme', image: '/images/tenis.svg' })
-  assert.equal((await app.request('/page?cid=nope')).status, 404)
+  const tabbed = page.blocks.find((b: any) => b.type === 'tabbed-shelf')
+  assert.deepEqual(tabbed.tabs.map((t: any) => t.label), ['Mais vendidos', 'Corrida', 'Acessórios'])
+  assert.equal(tabbed.tabs[0].productIds, undefined) // ids are resolved to cards, like a shelf
+  assert.equal((await get('/page?cid=nope')).status, 404)
 
   // every storefront link in the home resolves: /c/<category>, /product/<id> or /<cms page>
   const links = page.blocks.flatMap((b: any) => [
-    b.link, ...(b.actions ?? []).map((a: any) => a.link), ...(b.items ?? []).map((i: any) => i.link), ...(b.slides ?? []).map((s: any) => s.link),
+    b.link, b.banner?.link, ...(b.actions ?? []).map((a: any) => a.link), ...(b.items ?? []).map((i: any) => i.link), ...(b.slides ?? []).map((s: any) => s.link),
   ]).filter(Boolean)
   assert.ok(links.length >= 10)
   for (const link of links) {
     const [, kind, id] = link.match(/^\/(?:(c|product)\/)?([a-z0-9-]+)$/) ?? []
     assert.ok(id, `unexpected link format ${link}`)
     const api = kind === 'c' ? `/category?id=${id}` : kind === 'product' ? `/product?id=${id}` : `/page?cid=${id}`
-    assert.equal((await app.request(api)).status, 200, link)
+    assert.equal((await get(api)).status, 200, link)
   }
 
   // CMS pages only list real products
   for (const cid of ['home', 'novidades', 'ofertas']) {
-    for (const b of (await (await app.request(`/page?cid=${cid}`)).json()).blocks.filter((b: any) => b.type === 'shelf')) {
-      for (const p of b.products) assert.ok(p.name && p.image, `${cid}/${b.id}`)
+    for (const b of (await (await get(`/page?cid=${cid}`)).json()).blocks) {
+      const lists = b.type === 'shelf' ? [b.products] : b.type === 'tabbed-shelf' ? b.tabs.map((t: any) => t.products) : []
+      for (const list of lists) {
+        assert.ok(list.length > 0, `${cid}/${b.id} is empty`)
+        for (const p of list) assert.ok(p.name && p.image, `${cid}/${b.id}`)
+      }
     }
   }
 
-  const product = await (await app.request('/product?id=tenis-runner')).json()
+  const product = await (await get('/product?id=tenis-runner')).json()
   assert.equal(product.name, 'Tênis Runner')
   assert.deepEqual(product.category, { id: 'corrida', name: 'Corrida' })
   assert.deepEqual(product.subcategory, { id: 'tenis', name: 'Tênis' })
   assert.deepEqual([product.price, product.listPrice, product.basePrice, product.outOfStockIn], [undefined, undefined, undefined, undefined])
-  assert.equal((await app.request('/product?id=nope')).status, 404)
+  assert.equal((await get('/product?id=nope')).status, 404)
 })
 
 test('category lists its products without prices', async () => {
-  const res = await app.request('/category?id=eletronicos')
+  const res = await get('/category?id=eletronicos')
   const category = await res.json()
   assert.equal(res.status, 200)
   assert.equal(category.name, 'Eletrônicos')
   assert.deepEqual(category.products.map((p: any) => p.id), ['relogio-gps', 'fone-sport'])
   assert.equal(category.products[0].price, undefined)
-  assert.equal((await app.request('/category?id=nope')).status, 404)
-  assert.equal((await app.request('/category?id=toString')).status, 404)
+  assert.equal((await get('/category?id=nope')).status, 404)
+  assert.equal((await get('/category?id=toString')).status, 404)
 
-  const roupas = await (await app.request('/category?id=roupas')).json()
+  const roupas = await (await get('/category?id=roupas')).json()
   assert.deepEqual(roupas.parent, { id: 'corrida', name: 'Corrida' })
   assert.deepEqual(roupas.products.map((p: any) => p.id), ['camiseta-basic', 'bermuda-dry', 'jaqueta-corta-vento'])
-  assert.equal((await (await app.request('/category?id=corrida')).json()).products.length, 5) // parent lists all its subcategories
+  assert.equal((await (await get('/category?id=corrida')).json()).products.length, 5) // parent lists all its subcategories
 })
 
 test('categories returns the menu tree, and every product sits in a subcategory of its category', async () => {
-  const { categories } = await (await app.request('/categories')).json()
+  const { categories } = await (await get('/categories')).json()
   assert.deepEqual(categories.map((c: any) => c.id), ['corrida', 'acessorios', 'eletronicos'])
   assert.deepEqual(categories[0].subcategories, [{ id: 'tenis', name: 'Tênis' }, { id: 'roupas', name: 'Roupas' }, { id: 'meias', name: 'Meias' }])
 
   for (const id of ['tenis-runner', 'camiseta-basic', 'mochila-urban', 'garrafa-termica', 'bermuda-dry', 'meia-pro', 'bone-trail', 'jaqueta-corta-vento', 'relogio-gps', 'fone-sport']) {
-    const p = await (await app.request(`/product?id=${id}`)).json()
+    const p = await (await get(`/product?id=${id}`)).json()
     const parent = categories.find((c: any) => c.id === p.category.id)
     assert.ok(parent?.subcategories.some((s: any) => s.id === p.subcategory.id), id)
   }
 })
 
 test('search matches name, brand and description ignoring accents and case', async () => {
-  const ids = async (q: string) => (await (await app.request(`/search?q=${encodeURIComponent(q)}`)).json()).products.map((p: any) => p.id)
+  const ids = async (q: string) => (await (await get(`/search?q=${encodeURIComponent(q)}`)).json()).products.map((p: any) => p.id)
   assert.deepEqual(await ids('tenis'), ['tenis-runner'])
   assert.deepEqual(await ids('PULSE'), ['relogio-gps', 'fone-sport'])
   assert.deepEqual(await ids('mochila notebook'), ['mochila-urban'])
   assert.deepEqual(await ids('nada-disso'), [])
-  assert.equal((await app.request('/search?q=a')).status, 400)
-  assert.equal((await app.request('/search')).status, 400)
-  const first = (await (await app.request('/search?q=tenis')).json()).products[0]
+  assert.equal((await get('/search?q=a')).status, 400)
+  assert.equal((await get('/search')).status, 400)
+  const first = (await (await get('/search?q=tenis')).json()).products[0]
   assert.equal(first.price, undefined)
 })
 
 test('prices change with warehouse, in batch', async () => {
-  const get = (ids: string, warehouse?: string) =>
-    app.request(`/prices?ids=${ids}`, { headers: warehouse ? { warehouse } : {} })
-  const sp = await (await get('tenis-runner,camiseta-basic,nope', 'sp-01')).json()
+  const prices = (ids: string, warehouse?: string) => get(`/prices?ids=${ids}`, warehouse ? { warehouse } : {})
+  const sp = await (await prices('tenis-runner,camiseta-basic,nope', 'sp-01')).json()
   assert.equal(sp.warehouse, 'sp-01')
   assert.deepEqual(sp.prices, {
     'tenis-runner': { price: 29990, listPrice: 39990, available: true },
     'camiseta-basic': { price: 5990, listPrice: 7990, available: true },
   })
-  const mg = await (await get('tenis-runner', 'mg-01')).json()
+  const mg = await (await prices('tenis-runner', 'mg-01')).json()
   assert.deepEqual(mg.prices['tenis-runner'], { price: 32389, listPrice: 43189, available: true })
-  assert.equal((await (await get('tenis-runner')).json()).warehouse, 'br-01') // default warehouse
+  assert.equal((await (await prices('tenis-runner')).json()).warehouse, 'br-01') // default warehouse
 
-  assert.equal((await get('tenis-runner', 'toString')).status, 400)
-  assert.equal((await get('')).status, 400)
-  assert.equal((await get(Array(101).fill('tenis-runner').join(','))).status, 400)
-  assert.deepEqual((await (await get('__proto__,constructor')).json()).prices, {})
+  assert.equal((await prices('tenis-runner', 'toString')).status, 400)
+  assert.equal((await prices('')).status, 400)
+  assert.equal((await prices(Array(101).fill('tenis-runner').join(','))).status, 400)
+  assert.deepEqual((await (await prices('__proto__,constructor')).json()).prices, {})
 })
 
 test('stock depends on the warehouse; without one, add-item needs stock everywhere', async () => {
   const stock = async (warehouse?: string) => {
-    const { prices } = await (await app.request('/prices?ids=tenis-runner,relogio-gps,fone-sport', { headers: warehouse ? { warehouse } : {} })).json()
+    const { prices } = await (await get('/prices?ids=tenis-runner,relogio-gps,fone-sport', warehouse ? { warehouse } : {})).json()
     return Object.fromEntries(Object.entries(prices).map(([id, p]: [string, any]) => [id, p.available]))
   }
   assert.deepEqual(await stock('sp-01'), { 'tenis-runner': true, 'relogio-gps': true, 'fone-sport': false })

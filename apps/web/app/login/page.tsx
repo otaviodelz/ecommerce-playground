@@ -1,11 +1,12 @@
-import { login } from "@/lib/actions"
-import { LoginForm } from "@/components/forms"
+import { useTranslations } from "next-intl"
+import { SignIn } from "@/components/forms"
 
 export default function LoginPage() {
+  const t = useTranslations("Nav")
   return (
     <>
-      <h1>Entrar</h1>
-      <LoginForm action={login} />
+      <h1>{t("signIn")}</h1>
+      <SignIn />
     </>
   )
 }

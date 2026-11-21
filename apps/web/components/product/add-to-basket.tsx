@@ -1,15 +1,19 @@
 "use client"
 
-import { Button } from "@ui-sdk/react/button"
-import { Dialog, DialogBackdrop, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@ui-sdk/react/dialog"
+import { Button } from "@playground/design-system/button"
+import { Dialog, DialogBackdrop, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@playground/design-system/dialog"
+import { Spinner } from "@playground/design-system/spinner"
+import { useTranslations } from "next-intl"
 import { useState, useTransition } from "react"
-import type { AddItem, FormAction } from "@/lib/actions"
-import { CepForm } from "../forms"
+import { CepForm, type FormAction } from "../forms"
+
+export type AddItem = (productId: string) => Promise<{ error?: string; locationRequired?: boolean }>
 
 type Props = { productId: string; name: string; label: string; available: boolean; add?: AddItem; setLocation?: FormAction }
 
 // Without `add` (offer still loading) the button holds its place, disabled.
 function AddToBasket({ productId, name, label, available, add, setLocation }: Props) {
+  const t = useTranslations("Offer")
   const [askCep, setAskCep] = useState(false)
   const [error, setError] = useState("")
   const [added, setAdded] = useState(false)
@@ -28,33 +32,31 @@ function AddToBasket({ productId, name, label, available, add, setLocation }: Pr
   if (!available) {
     return (
       <Button disabled>
-        Indisponível <span className="sr-only">{name}</span>
+        {t("unavailable")} <span className="sr-only">{name}</span>
       </Button>
     )
   }
 
   return (
     <>
-      <Button data-variant="solid" onClick={submit} disabled={!add || pending} aria-busy={pending || undefined} focusableWhenDisabled>
-        {pending && <span className="spinner" aria-hidden="true" />}
+      <Button variant="solid" onClick={submit} disabled={!add || pending} aria-busy={pending || undefined} focusableWhenDisabled>
+        {pending && <Spinner className="spinner me-2" />}
         {label} <span className="sr-only">{name}</span>
       </Button>
       <p role="status" className="sr-only">
-        {pending ? "Adicionando…" : added ? `${name} adicionado à cesta.` : ""}
+        {pending ? t("adding") : added ? t("added", { name }) : ""}
       </p>
       {error && (
-        <p role="alert" className="error">
+        <p role="alert" className="text-sm text-destructive">
           {error}
         </p>
       )}
       {setLocation && (
         <Dialog open={askCep} onOpenChange={setAskCep}>
           <DialogBackdrop />
-          <DialogContent className="stack">
-            <DialogTitle>Informe seu CEP</DialogTitle>
-            <DialogDescription>
-              {name} não tem estoque em todas as regiões. Com o seu CEP conferimos o estoque e adicionamos à cesta.
-            </DialogDescription>
+          <DialogContent className="flex max-w-[26rem] flex-col gap-4">
+            <DialogTitle>{t("askCepTitle")}</DialogTitle>
+            <DialogDescription>{t("askCepDescription", { name })}</DialogDescription>
             <CepForm
               action={setLocation}
               onSuccess={() => {
@@ -62,7 +64,7 @@ function AddToBasket({ productId, name, label, available, add, setLocation }: Pr
                 submit()
               }}
             />
-            <DialogClose>Cancelar</DialogClose>
+            <DialogClose>{t("cancel")}</DialogClose>
           </DialogContent>
         </Dialog>
       )}

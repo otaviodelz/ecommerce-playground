@@ -1,37 +1,24 @@
 import type { Metadata } from "next"
-import { cookies } from "next/headers"
+import { NextIntlClientProvider } from "next-intl"
+import { getTranslations } from "next-intl/server"
 import Link from "next/link"
 import { Suspense } from "react"
-import "@ui-sdk/core/web.css"
 import "./globals.css"
-import { api, getContent, getFavorites, type Basket, type MenuCategory } from "@/lib/api"
-import { setLocation } from "@/lib/actions"
+import { getContent, type MenuCategory } from "@/lib/api"
+import { market, openGraphBase, SITE_URL } from "@/lib/config"
 import { CategoryBar, CategoryLinks } from "@/components/layout/category-bar"
-import { CepPopover, SearchForm } from "@/components/layout/header"
+import { Footer } from "@/components/layout/footer"
+import { SearchForm, Session } from "@/components/layout/header"
+import { Providers } from "@/components/providers"
 
-export const metadata: Metadata = {
-  title: "Playground Store",
-  description: "Ecommerce playground",
-}
-
-async function Session() {
-  const jar = await cookies()
-  const name = jar.get("name")?.value
-  const [basket, favorites] = await Promise.all([api<Basket>("/basket"), getFavorites()])
-  const count = basket.ok ? basket.data.items.reduce((sum, item) => sum + item.quantity, 0) : 0
-  const favoriteCount = favorites.ok ? favorites.data.products.length : 0
-  return (
-    <div className="session">
-      <CepPopover action={setLocation} cep={jar.get("cep")?.value} />
-      {name ? <span>olá, {name.split(" ")[0].toLowerCase()}</span> : <Link href="/login">entrar</Link>}
-      <Link href="/favorites" aria-label={`Favoritos, ${favoriteCount} ${favoriteCount === 1 ? "produto" : "produtos"}`}>
-        favoritos <span className="count">[{favoriteCount}]</span>
-      </Link>
-      <Link href="/basket" aria-label={`Cesta, ${count} ${count === 1 ? "item" : "itens"}`}>
-        cesta <span className="count">[{count}]</span>
-      </Link>
-    </div>
-  )
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Metadata")
+  return {
+    metadataBase: new URL(SITE_URL),
+    title: { default: "Playground Store", template: "%s | Playground Store" },
+    description: t("description"),
+    openGraph: openGraphBase,
+  }
 }
 
 // The menu tree is the same for everyone: cached content, so the bar lands in the static shell.
@@ -46,19 +33,23 @@ async function Categories() {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="pt-BR">
+    <html lang={market.locale}>
       <body>
-        <header className="header">
-          <Link href="/" className="logo">
-            playground
-          </Link>
-          <SearchForm />
-          <Suspense fallback={<div className="session" />}>
-            <Session />
-          </Suspense>
-        </header>
-        <Categories />
-        <main className="main">{children}</main>
+        {/* Rendered on the server, so it hands the market's locale and messages to client components. */}
+        <NextIntlClientProvider>
+          <Providers>
+            <header className="flex flex-wrap items-center gap-x-5 gap-y-3 border-b border-line px-4 py-3">
+              <Link href="/" className="font-mono text-md tracking-[-0.03em] no-underline">
+                playground
+              </Link>
+              <SearchForm />
+              <Session />
+            </header>
+            <Categories />
+            <main className="mx-auto flex w-full max-w-store flex-col gap-8 px-4 pt-6 pb-12">{children}</main>
+            <Footer />
+          </Providers>
+        </NextIntlClientProvider>
       </body>
     </html>
   )

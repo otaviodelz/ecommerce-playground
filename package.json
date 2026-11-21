@@ -4,8 +4,11 @@
   "packageManager": "pnpm@10.34.6",
   "scripts": {
     "dev": "turbo run dev",
-    "build": "turbo run build",
-    "test": "turbo run test"
+    "build": "node scripts/build.mjs",
+    "start": "turbo run start --filter=server --filter=web",
+    "test": "turbo run test",
+    "storybook": "pnpm --filter @playground/storybook dev",
+    "storybook:build": "pnpm --filter @playground/storybook build"
   },
   "devDependencies": {
     "turbo": "^2.11.11"

@@ -1,0 +1,59 @@
+@layer base {
+  body {
+    margin: 0;
+    background: var(--ui-background);
+    color: var(--ui-foreground);
+    font-family: var(--ui-font-sans);
+    font-size: var(--ds-text-base);
+    line-height: var(--ui-line-height);
+  }
+
+  a {
+    color: inherit;
+  }
+
+  h1,
+  h2,
+  h3 {
+    margin: 0;
+    font-family: var(--ds-font-mono);
+    font-weight: 400;
+    letter-spacing: -0.02em;
+  }
+
+  h1 {
+    font-size: var(--ds-text-xl);
+  }
+
+  h2 {
+    font-size: 0.95rem;
+  }
+
+  h3 {
+    font-size: var(--ds-text-base);
+  }
+
+  p {
+    margin: 0;
+  }
+
+  ::selection {
+    background: var(--ds-accent);
+    color: var(--ds-accent-fg);
+  }
+}
+
+@layer components {
+  .mono {
+    font-family: var(--ds-font-mono);
+  }
+
+  .muted {
+    color: var(--ds-fg-3);
+  }
+
+  .error {
+    color: var(--ui-destructive);
+    font-size: var(--ds-text-sm);
+  }
+}

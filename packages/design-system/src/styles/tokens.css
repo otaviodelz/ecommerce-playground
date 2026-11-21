@@ -1,0 +1,79 @@
+/* Terminal theme tokens. Decorative lines use --ds-line (#2e2e2e); interactive edges use --ui-input (#6a6a6a) for >= 3:1 contrast. */
+:root {
+  color-scheme: dark;
+
+  --ds-bg: #0c0c0c;
+  --ds-surface: #161616;
+  --ds-surface-2: #1a1a1a;
+  --ds-line: #2e2e2e;
+  --ds-line-strong: #6a6a6a;
+
+  --ds-fg: #fafafa;
+  --ds-fg-2: #aeaeae;
+  --ds-fg-3: #8f8f8f;
+
+  --ds-accent: #54d483;
+  --ds-accent-fg: #0c0c0c;
+  --ds-accent-surface: color-mix(in oklab, var(--ds-accent) 12%, var(--ds-bg));
+
+  --ds-destructive: #ff7b72;
+  --ds-destructive-fg: #0c0c0c;
+  --ds-destructive-surface: color-mix(in oklab, var(--ds-destructive) 10%, var(--ds-bg));
+
+  --ds-warning: #e5b567;
+  --ds-warning-fg: #0c0c0c;
+  --ds-warning-surface: color-mix(in oklab, var(--ds-warning) 12%, var(--ds-bg));
+
+  --ds-font-sans: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --ds-font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+  --ds-text-xs: 0.75rem;
+  --ds-text-sm: 0.8125rem;
+  --ds-text-base: 0.875rem;
+  --ds-text-md: 1rem;
+  --ds-text-lg: 1.25rem;
+  --ds-text-xl: 1.75rem;
+  --ds-text-display: clamp(1.75rem, 4vw, 2.75rem);
+
+  --ds-space-1: 0.25rem;
+  --ds-space-2: 0.5rem;
+  --ds-space-3: 0.75rem;
+  --ds-space-4: 1rem;
+  --ds-space-5: 1.25rem;
+  --ds-space-6: 1.5rem;
+  --ds-space-8: 2rem;
+  --ds-space-12: 3rem;
+
+  --ds-radius: 0;
+  --ds-container-max: 72rem;
+  --ds-duration-fast: 120ms;
+  --ds-duration-base: 160ms;
+
+  --accent: var(--ds-accent);
+  --surface: var(--ds-surface);
+  --surface-2: var(--ds-surface-2);
+  --line: var(--ds-line);
+  --text-2: var(--ds-fg-2);
+  --text-3: var(--ds-fg-3);
+  --mono: var(--ds-font-mono);
+
+  --ui-background: var(--ds-bg);
+  --ui-foreground: var(--ds-fg);
+  --ui-muted: var(--ds-surface-2);
+  --ui-muted-foreground: var(--ds-fg-3);
+  --ui-border: var(--ds-line);
+  --ui-input: var(--ds-line-strong);
+  --ui-primary: var(--ds-fg);
+  --ui-primary-foreground: var(--ds-bg);
+  --ui-destructive: var(--ds-destructive);
+  --ui-ring: var(--ds-accent);
+  --ui-ring-border: var(--ds-accent);
+  --ui-overlay: rgb(0 0 0 / 0.7);
+  --ui-shadow: 0 1px 2px rgb(0 0 0 / 0.5), 0 8px 24px -8px rgb(0 0 0 / 0.75);
+  --ui-radius: var(--ds-radius);
+  --ui-spacing: 0.25rem;
+  --ui-font-size: var(--ds-text-base);
+  --ui-line-height: 1.5;
+  --ui-font-sans: var(--ds-font-sans);
+  --ui-font-mono: var(--ds-font-mono);
+}

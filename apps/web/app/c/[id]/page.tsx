@@ -1,39 +1,64 @@
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbSeparator } from "@playground/design-system/breadcrumb"
+import { PageHeader } from "@playground/design-system/layout"
+import type { Metadata } from "next"
+import { useTranslations } from "next-intl"
+import { getTranslations } from "next-intl/server"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Suspense } from "react"
 import { getContent, type Category, type MenuCategory } from "@/lib/api"
+import { openGraphBase } from "@/lib/config"
 import { ProductCard } from "@/components/product/product-card"
 
 async function CategoryListing({ params }: Pick<PageProps<"/c/[id]">, "params">) {
   const { id } = await params
-  const res = await getContent<Category>(`/category?id=${encodeURIComponent(id)}`)
+  const [res, t, common] = await Promise.all([getContent<Category>(`/category?id=${encodeURIComponent(id)}`), getTranslations("Category"), getTranslations("Common")])
   if (res.status === 404) notFound()
   const { name, description, parent, products } = res.data
-  const ids = products.map((p) => p.id).join(",")
 
   return (
     <>
-      <header className="page-header">
+      <PageHeader>
         {parent && (
-          <nav className="breadcrumb" aria-label="Você está em">
-            <Link href={`/c/${parent.id}`} prefetch>{parent.name}</Link> › {name}
-          </nav>
+          <Breadcrumb aria-label={common("youAreHere")}>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <Link href={`/c/${parent.id}`} prefetch>
+                  {parent.name}
+                </Link>
+                <BreadcrumbSeparator />
+              </BreadcrumbItem>
+              <BreadcrumbItem aria-current="page">{name}</BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
         )}
         <h1>{name}</h1>
-        <p className="muted">{description}</p>
-        <p className="muted mono">
-          {products.length} {products.length === 1 ? "produto" : "produtos"}
-        </p>
-      </header>
-      <ul className="grid">
+        <p className="text-fg-3">{description}</p>
+        <p className="font-mono text-fg-3">{t("count", { count: products.length })}</p>
+      </PageHeader>
+      <ul className="m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(13rem,1fr))] gap-3 p-0">
         {products.map((product) => (
           <li key={product.id}>
-            <ProductCard product={product} ids={ids} />
+            <ProductCard product={product} />
           </li>
         ))}
       </ul>
     </>
   )
+}
+
+export async function generateMetadata({ params }: PageProps<"/c/[id]">): Promise<Metadata> {
+  const { id } = await params
+  const [res, t] = await Promise.all([getContent<Category>(`/category?id=${encodeURIComponent(id)}`), getTranslations("Category")])
+  if (res.status === 404) return {} // the page itself answers with notFound()
+  const { name, description, parent } = res.data
+  const path = `/c/${id}`
+  return {
+    title: parent ? t("title", { name, parent: parent.name }) : name,
+    description,
+    alternates: { canonical: path },
+    openGraph: { ...openGraphBase, title: name, description, url: path },
+  }
 }
 
 // Every category and subcategory is built (there are few); one added later works like an unlisted product:
@@ -44,8 +69,9 @@ export async function generateStaticParams() {
 }
 
 export default function CategoryPage({ params }: PageProps<"/c/[id]">) {
+  const t = useTranslations("Common")
   return (
-    <Suspense fallback={<p className="muted">Carregando…</p>}>
+    <Suspense fallback={<p className="text-fg-3">{t("loading")}</p>}>
       <CategoryListing params={params} />
     </Suspense>
   )

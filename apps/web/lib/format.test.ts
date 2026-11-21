@@ -1,5 +1,5 @@
 import { expect, test } from "vitest"
-import { discountPercent, installments } from "./api"
+import { discountPercent, installments } from "./format"
 
 test("installments split up to 10x with a R$ 10 minimum", () => {
   expect(installments(29990)).toEqual({ count: 10, value: 2999 })
