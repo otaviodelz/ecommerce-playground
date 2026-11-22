@@ -1,0 +1,33 @@
+{
+  "name": "@playground/account",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3003",
+    "build": "next build",
+    "start": "next start -p 3003",
+    "typecheck": "next typegen && tsc --noEmit"
+  },
+  "dependencies": {
+    "@playground/catalog": "workspace:*",
+    "@playground/design-system": "workspace:*",
+    "@playground/favorites": "workspace:*",
+    "@playground/platform": "workspace:*",
+    "@playground/shell": "workspace:*",
+    "@tanstack/react-query": "^5.107.1",
+    "@ui-sdk/core": "0.1.0-beta.1",
+    "@ui-sdk/react": "0.1.0-beta.1",
+    "next": "16.4.6",
+    "next-intl": "^4.15.1",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.5",
+    "@types/node": "^22.20.5",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "tailwindcss": "^4.3.5",
+    "typescript": "^5"
+  }
+}

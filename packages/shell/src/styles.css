@@ -1,0 +1,10 @@
+@import "@playground/design-system/styles.css";
+@import "@playground/shipping/styles.css";
+@import "@playground/cart/styles.css";
+@import "@playground/favorites/styles.css";
+
+@source ".";
+
+@view-transition {
+  navigation: auto;
+}

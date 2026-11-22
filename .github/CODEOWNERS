@@ -1,0 +1,27 @@
+# Multi-Squad Ownership Boundaries
+# Each squad owns its Multi-Zone app(s) and its dedicated transversal domain package(s).
+
+# Platform & Design System
+/packages/design-system/       @playground/squad-platform-ds
+/apps/storybook/               @playground/squad-platform-ds
+/packages/platform/            @playground/squad-platform
+/packages/shell/               @playground/squad-platform
+/scripts/                      @playground/squad-platform
+
+# Squad: Home e Busca
+/apps/discovery/               @playground/squad-home-busca
+
+# Squad: PDP
+/apps/pdp/                     @playground/squad-pdp
+/packages/catalog/             @playground/squad-pdp
+
+# Squad: Entrega
+/packages/shipping/            @playground/squad-entrega
+
+# Squad: Login e Sacola
+/apps/cart-auth/               @playground/squad-login-sacola
+/packages/cart/                @playground/squad-login-sacola
+
+# Squad: Pós-Compra
+/apps/account/                 @playground/squad-pos-compra
+/packages/favorites/           @playground/squad-pos-compra

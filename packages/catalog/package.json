@@ -1,0 +1,44 @@
+{
+  "name": "@playground/catalog",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "scripts": {
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit"
+  },
+  "exports": {
+    "./styles.css": "./src/styles.css",
+    "./pricing": "./src/pricing.ts",
+    "./offer": "./src/offer.tsx",
+    "./product-card": "./src/product-card.tsx"
+  },
+  "dependencies": {
+    "@playground/cart": "workspace:*",
+    "@playground/design-system": "workspace:*",
+    "@playground/favorites": "workspace:*",
+    "@playground/platform": "workspace:*",
+    "@playground/shipping": "workspace:*",
+    "@tanstack/react-query": "^5.107.1",
+    "next-intl": "^4.15.1"
+  },
+  "peerDependencies": {
+    "next": ">=16",
+    "react": ">=19",
+    "react-dom": ">=19",
+    "tailwindcss": ">=4"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "next": "16.4.6",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "tailwindcss": "^4.3.5",
+    "typescript": "^5"
+  }
+}

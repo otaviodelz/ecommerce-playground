@@ -1,0 +1,50 @@
+{
+  "name": "@playground/platform",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "exports": {
+    "./config": "./src/config.ts",
+    "./zones": "./src/zones.ts",
+    "./zone-link": "./src/zone-link.tsx",
+    "./zone-navigation": "./src/zone-navigation.tsx",
+    "./api": "./src/api.ts",
+    "./revalidate": "./src/revalidate.ts",
+    "./token": "./src/token.ts",
+    "./format": "./src/format.ts",
+    "./forms": "./src/forms.ts",
+    "./providers": "./src/providers.tsx",
+    "./i18n": "./src/i18n.ts",
+    "./messages/pt-BR.json": "./src/messages/pt-BR.json",
+    "./client/api": "./src/client/api.ts",
+    "./client/session": "./src/client/session.ts",
+    "./client/use-in-view": "./src/client/use-in-view.ts"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.107.1",
+    "next-intl": "^4.15.1"
+  },
+  "peerDependencies": {
+    "next": ">=16",
+    "react": ">=19",
+    "react-dom": ">=19"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.3.3",
+    "@types/node": "^22.20.5",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "jsdom": "^31.0.1",
+    "next": "16.4.6",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "typescript": "^5",
+    "vitest": "^5.1.0"
+  }
+}

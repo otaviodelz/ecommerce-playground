@@ -3,10 +3,12 @@
   "private": true,
   "packageManager": "pnpm@10.34.6",
   "scripts": {
-    "dev": "turbo run dev",
+    "dev": "node scripts/run-zones.mjs dev",
     "build": "node scripts/build.mjs",
-    "start": "turbo run start --filter=server --filter=web",
+    "start": "node scripts/run-zones.mjs start",
+    "stop": "node scripts/run-zones.mjs stop",
     "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
     "storybook": "pnpm --filter @playground/storybook dev",
     "storybook:build": "pnpm --filter @playground/storybook build"
   },

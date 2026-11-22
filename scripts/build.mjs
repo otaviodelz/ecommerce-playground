@@ -3,6 +3,18 @@ import { spawn } from "node:child_process"
 const apiUrl = process.env.API_URL ?? "http://localhost:3333"
 const extraArgs = process.argv.slice(2)
 
+const SHARED_PACKAGES = [
+  "server",
+  "@playground/design-system",
+  "@playground/platform",
+  "@playground/shipping",
+  "@playground/cart",
+  "@playground/favorites",
+  "@playground/catalog",
+  "@playground/shell",
+]
+const ZONES = ["@playground/discovery", "@playground/pdp", "@playground/cart-auth", "@playground/account"]
+
 function run(command, args) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
@@ -35,7 +47,7 @@ async function waitForApi(timeoutMs = 15000) {
 const isLocalApi = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i.test(apiUrl)
 const port = new URL(apiUrl).port || "3333"
 
-const preBuild = await run("pnpm", ["exec", "turbo", "run", "build", "--filter=server", "--filter=@playground/design-system", ...extraArgs])
+const preBuild = await run("pnpm", ["exec", "turbo", "run", "build", ...SHARED_PACKAGES.map((pkg) => `--filter=${pkg}`), ...extraArgs])
 if (preBuild !== 0) process.exit(preBuild)
 
 let server = null
@@ -52,8 +64,8 @@ try {
     }
   }
 
-  const webBuild = await run("pnpm", ["exec", "turbo", "run", "build", "--filter=web", ...extraArgs])
-  process.exit(webBuild)
+  const zonesBuild = await run("pnpm", ["exec", "turbo", "run", "build", ...ZONES.map((zone) => `--filter=${zone}`), ...extraArgs])
+  process.exit(zonesBuild)
 } finally {
   if (server && !server.killed) {
     server.kill()
